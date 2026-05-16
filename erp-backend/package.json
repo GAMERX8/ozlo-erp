@@ -1,0 +1,73 @@
+{
+    "name": "saas-template-backend",
+    "version": "1.0.0",
+    "description": "SaaS Template Backend API",
+    "engines": {
+        "node": ">=20.0.0"
+    },
+    "main": "dist/main.js",
+    "scripts": {
+        "build": "nest build",
+        "start": "node dist/main.js",
+        "start:dev": "nest start --watch",
+        "dev": "nest start --watch"
+    },
+    "dependencies": {
+        "@aws-sdk/client-s3": "^3.1018.0",
+        "@aws-sdk/s3-request-presigner": "^3.1018.0",
+        "@nestjs/common": "^11.1.14",
+        "@nestjs/config": "^4.0.3",
+        "@nestjs/core": "^11.1.14",
+        "@nestjs/event-emitter": "^3.0.1",
+        "@nestjs/jwt": "^11.0.2",
+        "@nestjs/mapped-types": "^2.1.1",
+        "@nestjs/passport": "^11.0.5",
+        "@nestjs/platform-express": "^11.1.14",
+        "@nestjs/platform-socket.io": "^11.1.14",
+        "@nestjs/swagger": "^11.4.1",
+        "@nestjs/websockets": "^11.1.14",
+        "@prisma/adapter-pg": "^7.4.2",
+        "@prisma/client": "^5.22.0",
+        "@types/nodemailer": "^7.0.11",
+        "@types/passport-google-oauth20": "^2.0.17",
+        "bcrypt": "^6.0.0",
+        "class-transformer": "^0.5.1",
+        "class-validator": "^0.15.1",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.5",
+        "express": "^4.19.2",
+        "nestjs-pino": "^4.6.1",
+        "nodemailer": "^8.0.1",
+        "passport": "^0.7.0",
+        "passport-google-oauth20": "^2.0.0",
+        "passport-jwt": "^4.0.1",
+        "pg": "^8.19.0",
+        "pino-http": "^11.0.0",
+        "pino-pretty": "^13.1.3",
+        "qrcode": "^1.5.4",
+        "reflect-metadata": "^0.2.2",
+        "rxjs": "^7.8.2",
+        "socket.io": "^4.7.5",
+        "speakeasy": "^2.0.0",
+        "ssh2": "^1.15.0",
+        "stripe": "^20.4.0",
+        "swagger-ui-express": "^5.0.1"
+    },
+    "devDependencies": {
+        "@nestjs/cli": "^11.0.16",
+        "@nestjs/schematics": "^11.0.9",
+        "@nestjs/testing": "^11.1.14",
+        "@types/bcrypt": "^6.0.0",
+        "@types/express": "^5.0.6",
+        "@types/node": "^25.3.3",
+        "@types/passport-jwt": "^4.0.1",
+        "nodemon": "^3.1.0",
+        "prisma": "^5.22.0",
+        "ts-loader": "^9.5.4",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.9.3"
+    },
+    "prisma": {
+        "seed": "ts-node prisma/seed.ts"
+    }
+}

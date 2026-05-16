@@ -1,0 +1,888 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  password          String?   // Nullable for OAuth users
+  provider          String    @default("local") // local | google | github
+  provider_id       String?   // OAuth provider user ID
+  first_name        String?
+  last_name         String?
+  phone             String?
+  avatar            String?
+  role              String    @default("user") // user | super_admin
+  email_verified    Boolean   @default(false)
+  email_verify_token String?  @unique
+  email_verify_expires DateTime?
+  mfa_enabled       Boolean   @default(false)
+  mfa_secret        MfaSecret?
+  date_created      DateTime  @default(now())
+  workspaces        Workspace[]  // Workspaces donde es owner
+  workspaceMembers  WorkspaceMember[]  // Workspaces donde es miembro
+  invitationsSent   WorkspaceInvitation[] @relation("InvitedBy")
+  invitationsReceived WorkspaceInvitation[] @relation("InvitedUser")
+  passwordResets    PasswordReset[]
+  auditLogs         AuditLog[]
+  assistantThreads  AssistantThread[]
+  storedFiles       StoredFile[]
+  apiKeys           ApiKey[]
+
+  @@unique([provider, provider_id])
+  @@map("users")
+}
+
+model MfaSecret {
+  id              String   @id @default(uuid())
+  user_id         String   @unique
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  secret          String   // Secret TOTP (encrypted)
+  backup_codes    String[] // Hashed backup codes
+  enabled_at      DateTime?
+  verified_at     DateTime? // Cuando escaneó QR y verificó primer código
+  created_at      DateTime @default(now())
+
+  @@map("mfa_secrets")
+}
+
+model PasswordReset {
+  id         String   @id @default(uuid())
+  token      String   @unique
+  expires    DateTime
+  used       Boolean  @default(false)
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  created_at DateTime @default(now())
+
+  @@map("password_resets")
+}
+
+model Workspace {
+  id                     String    @id @default(uuid())
+  name                   String
+  slug                   String    @unique
+  phone                  String?
+  website                String?
+  
+  // Plan actual (denormalizado para fácil acceso, especialmente para 'free' que no tiene subscription)
+  plan                   String    @default("free")
+  
+  // Estado simplificado: active | suspended
+  // Los estados de billing (past_due, canceled, etc.) vienen de la Subscription
+  status                 String    @default("active")
+  
+  // Relación con suscripción actual (null si está en free)
+  stripe_customer_id     String?
+  current_subscription_id String?  @unique
+  current_subscription   Subscription? @relation("CurrentSubscription", fields: [current_subscription_id], references: [id], onDelete: SetNull)
+  
+  credit_balance         Float     @default(0)
+  
+  date_created           DateTime  @default(now())
+  date_updated           DateTime  @default(now()) @updatedAt
+  
+  owner_id               String
+  owner                  User      @relation(fields: [owner_id], references: [id])
+  
+  members                WorkspaceMember[]
+  invitations            WorkspaceInvitation[]
+  auditLogs              AuditLog[]
+  subscriptions          Subscription[] @relation("WorkspaceHistory")
+  creditTransactions     CreditTransaction[]
+  assistantThreads       AssistantThread[]
+  storedFiles            StoredFile[]
+  clients                Client[]
+  categories             Category[]
+  products               Product[]
+  warehouses             Warehouse[]
+  
+  // NUEVAS RELACIONES - POWIP
+  couriers               Courier[]
+  orders                 Order[]
+  suppliers              Supplier[]
+  purchases              Purchase[]
+  supportTickets         SupportTicket[]
+  cashClosures           CashClosure[]
+  apiKeys                ApiKey[]
+  
+
+  @@map("workspaces")
+}
+
+// Eventos de Stripe para auditoría
+model StripeEvent {
+  id              String   @id @default(uuid())
+  stripe_event_id String   @unique
+  type            String
+  payload         Json
+  processed       Boolean  @default(false)
+  workspace_id    String?
+  date_created    DateTime @default(now())
+
+  @@map("stripe_events")
+}
+
+model WorkspaceMember {
+  id            String    @id @default(uuid())
+  workspace_id  String
+  workspace     Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  user_id       String
+  user          User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role          String    @default("member") // admin | member
+  date_created  DateTime  @default(now())
+  date_updated  DateTime  @updatedAt
+
+  @@unique([workspace_id, user_id])
+  @@map("workspace_members")
+}
+
+model WorkspaceInvitation {
+  id              String    @id @default(uuid())
+  workspace_id    String
+  workspace       Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  invited_user_id String
+  invited_user    User      @relation("InvitedUser", fields: [invited_user_id], references: [id], onDelete: Cascade)
+  invited_by      String
+  inviter         User      @relation("InvitedBy", fields: [invited_by], references: [id], onDelete: Cascade)
+  role            String    @default("member") // admin | member
+  status          String    @default("pending") // pending, accepted, rejected
+  date_created  DateTime  @default(now())
+  date_updated  DateTime  @updatedAt
+
+  @@map("workspace_invitations")
+}
+
+model AuditLog {
+  id              String   @id @default(uuid())
+  action          String   // ej: USER_LOGIN, WORKSPACE_CREATE, MEMBER_INVITE
+  entity_type     String   // ej: user, workspace, member, invitation
+  entity_id       String?  // ID de la entidad afectada
+  
+  // Actor (quién hizo la acción)
+  actor_id        String?  // User ID (nullable para acciones del sistema)
+  actor_type      String   @default("user") // user, system, api_key
+  
+  // Contexto
+  workspace_id    String?  // Si aplica a un workspace específico
+  ip_address      String?
+  user_agent      String?
+  
+  // Datos de la acción
+  metadata        Json?    // Datos adicionales específicos de la acción
+  before_state    Json?    // Estado anterior (para updates)
+  after_state     Json?    // Estado posterior (para updates)
+  
+  // Resultado
+  success         Boolean  @default(true)
+  error_message   String?
+  
+  created_at      DateTime @default(now())
+  
+  // Acciones y relaciones
+  actor           User?    @relation(fields: [actor_id], references: [id], onDelete: SetNull)
+  workspace       Workspace? @relation(fields: [workspace_id], references: [id], onDelete: SetNull)
+  
+  @@index([actor_id])
+  @@index([workspace_id])
+  @@index([action])
+  @@index([entity_type, entity_id])
+  @@index([created_at])
+  @@map("audit_logs")
+}
+
+model Subscription {
+  id                      String    @id @default(uuid())
+  workspace_id            String
+  workspace               Workspace @relation("WorkspaceHistory", fields: [workspace_id], references: [id], onDelete: Cascade)
+  current_for             Workspace? @relation("CurrentSubscription")
+  
+  // Tipo de suscripción: 'plan'
+  type                    String    @default("plan")
+  
+  plan                    String    // slug del plan
+  status                  String    @default("active") // active, past_due, canceled
+  stripe_subscription_id  String    @unique
+  stripe_price_id         String
+  
+  current_period_start    DateTime
+  current_period_end      DateTime
+  cancel_at_period_end    Boolean   @default(false)
+  
+  // Snapshot of limits when created
+  base_price              Float     @default(0)
+
+  created_at              DateTime  @default(now())
+  updated_at              DateTime  @updatedAt
+
+  @@map("subscriptions")
+}
+
+model CreditTransaction {
+  id                String   @id @default(uuid())
+  workspace_id      String
+  workspace         Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  
+  amount            Float    // Positivo recargas, negativo consumos
+  type              String   // 'purchase', 'usage'
+  description       String
+  stripe_payment_id String?  @unique // Nullable para usos de sistema. Único para evitar procesar misma compra dos veces
+  
+  created_at        DateTime @default(now())
+  
+  @@index([workspace_id])
+  @@index([type])
+  @@map("credit_transactions")
+}
+
+model Plan {
+  id                   String   @id @default(uuid())
+  name                 String
+  slug                 String   @unique
+  description          String?
+  price                Float
+  stripe_product_id    String?
+  stripe_price_id      String?
+  is_active            Boolean  @default(true)
+  is_system            Boolean  @default(false)  // true para planes protegidos (Free, Pro, Platform)
+  is_recommended       Boolean  @default(false)  // true para mostrar badge "Recomendado"
+  features             Json?    // Array of strings (features map)
+
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  @@map("plans")
+}
+
+model ApiKey {
+  id           String    @id @default(uuid())
+  name         String    // Ej: "Integración Shalom"
+  key_prefix   String    // Primeros caracteres para visualización (ej: ak_live_...)
+  key_hash     String    @unique // El token real Hasheado (seguridad)
+  workspace_id String
+  user_id      String
+  status       String    @default("active") // active | revoked
+  last_used    DateTime?
+  expires_at   DateTime?
+  created_at   DateTime  @default(now())
+
+  workspace    Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("api_keys")
+}
+
+model AssistantThread {
+  id              String             @id @default(uuid())
+  workspace_id    String
+  workspace       Workspace          @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  user_id         String
+  user            User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  title           String
+  model_key       String
+  provider        String             @default("openrouter")
+  created_at      DateTime           @default(now())
+  updated_at      DateTime           @updatedAt
+  last_message_at DateTime           @default(now())
+  messages        AssistantMessage[]
+
+  @@index([workspace_id, user_id, updated_at])
+  @@index([last_message_at])
+  @@map("assistant_threads")
+}
+
+model AssistantMessage {
+  id                String          @id @default(uuid())
+  thread_id         String
+  thread            AssistantThread @relation(fields: [thread_id], references: [id], onDelete: Cascade)
+  role              String
+  content           String
+  reasoning_summary String?
+  provider          String          @default("openrouter")
+  model_key         String
+  status            String          @default("completed")
+  prompt_tokens     Int?
+  completion_tokens Int?
+  total_tokens      Int?
+  created_at        DateTime        @default(now())
+  attachments       AssistantMessageAttachment[]
+
+  @@index([thread_id, created_at])
+  @@index([created_at])
+  @@map("assistant_messages")
+}
+
+model StoredFile {
+  id            String                     @id @default(uuid())
+  workspace_id  String
+  workspace     Workspace                  @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  uploaded_by   String
+  uploader      User                       @relation(fields: [uploaded_by], references: [id], onDelete: Cascade)
+  bucket        String
+  object_key    String                     @unique
+  filename      String
+  mime_type     String
+  size_bytes    Int
+  etag          String?
+  scope         String                     @default("general")
+  status        String                     @default("pending")
+  visibility    String                     @default("private")
+  created_at    DateTime                   @default(now())
+  updated_at    DateTime                   @updatedAt
+  assistantRefs AssistantMessageAttachment[]
+
+  @@index([workspace_id, scope, status])
+  @@index([uploaded_by, created_at])
+  @@map("stored_files")
+}
+
+model AssistantMessageAttachment {
+  id          String           @id @default(uuid())
+  message_id  String
+  message     AssistantMessage @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  file_id     String
+  file        StoredFile       @relation(fields: [file_id], references: [id], onDelete: Cascade)
+  created_at  DateTime         @default(now())
+
+  @@unique([message_id, file_id])
+  @@index([file_id])
+  @@map("assistant_message_attachments")
+}
+
+
+
+// ============================================
+// NUEVOS MODELOS - SISTEMA POWIP (ERP E-COMMERCE)
+// ============================================
+
+// Couriers / Transportistas
+model Courier {
+  id          String   @id @default(uuid())
+  workspace_id String
+  workspace   Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  
+  name        String   // Ej: "Olva", "Shalom", "Marvisur"
+  phone       String?
+  email       String?
+  website     String?
+  tracking_url String? // URL base para tracking (ej: https://tracking.olva.pe/?guide=)
+  
+  // Documento e Identificación
+  document_type   String?  @default("DNI") // DNI | RUC | CE | PASSPORT
+  document_number String?
+  
+  // Información de Vehículo
+  vehicle_type    String?  // Moto, Auto, Camioneta
+  license_plate   String?  // Placa del vehículo
+  
+  is_active   Boolean  @default(true)
+  
+  orders      Order[]
+  
+  date_created DateTime @default(now())
+  date_updated DateTime @updatedAt
+
+  @@map("couriers")
+}
+
+// Órdenes / Ventas - El núcleo del sistema ERP
+model Order {
+  id              String   @id @default(uuid())
+  workspace_id    String
+  workspace       Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  
+  // Cliente
+  client_id       String
+  client          Client   @relation(fields: [client_id], references: [id])
+  
+  // Origen y Destino
+  warehouse_id    String?
+  warehouse       Warehouse? @relation(fields: [warehouse_id], references: [id])
+  
+  // Canal y Tipo
+  channel         String   @default("OTHER") // FACEBOOK | WHATSAPP | INSTAGRAM | TIKTOK | OTHER
+  channel_detail  String?  // Ej: nombre de la página/grupo
+  order_type      String   @default("DIRECT") // DIRECT | PREORDER
+  
+  // Entrega
+  delivery_type   String   @default("DELIVERY") // DELIVERY | PICKUP
+  delivery_region String   @default("LIMA") // LIMA | PROVINCE
+  
+  // Pago
+  payment_method  String   @default("CASH_ON_DELIVERY") // CASH_ON_DELIVERY | CASH | TRANSFER | YAPE | PLIN
+  payment_status  String   @default("PENDING") // PENDING | PARTIAL | PAID
+  advance_payment Float    @default(0) // Adelanto recibido
+  total_amount    Float    @default(0) // Total de la orden
+  shipping_cost   Float    @default(0) // Costo de envío
+  
+  // Comprobante de pago (archivo adjunto)
+  payment_receipt_url String?
+  
+  // Estado Logístico (Pipeline)
+  status          String   @default("NO_CONFIRMED") 
+  // NO_CONFIRMED | CONTACTED | CONFIRMED | PREPARING | READY | SHIPPED | DELIVERED | RETURNED | CANCELLED
+  
+  // Courier y Tracking
+  courier_id      String?
+  courier         Courier? @relation(fields: [courier_id], references: [id])
+  tracking_number String?
+  tracking_url    String?  // URL completa de tracking
+  
+  // Fechas de transición de estados
+  contacted_at    DateTime?
+  preparing_at    DateTime?
+  ready_at        DateTime?
+  shipped_at      DateTime?
+  delivered_at    DateTime?
+  returned_at     DateTime?
+  cancelled_at    DateTime?
+  
+  // Datos de envío específicos
+  shipping_address  String?
+  shipping_reference String?
+  estimated_delivery_date DateTime?
+
+  // Notas y Comentarios
+  notes           String?  // Notas para el cliente / generales
+  internal_notes  String?  // Notas internas del equipo
+  cancellation_reason String?
+
+  order_number    String?  @unique @default(dbgenerated()) // Para un número legible más corto
+  
+  // Relaciones
+  items           OrderItem[]
+  supportTickets  SupportTicket[]
+  stockMovements  StockMovement[] // Para vincular movimientos de inventario
+  
+  date_created    DateTime @default(now())
+  date_updated    DateTime @updatedAt
+
+  @@index([workspace_id, status])
+  @@index([workspace_id, client_id])
+  @@index([tracking_number])
+  @@map("orders")
+}
+
+// Items de Orden (Líneas de venta)
+model OrderItem {
+  id              String   @id @default(uuid())
+  
+  order_id        String
+  order           Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  
+  // Producto (puede ser producto base o variante)
+  product_id      String
+  product         Product  @relation(fields: [product_id], references: [id])
+  
+  variant_id      String?
+  variant         ProductVariant? @relation(fields: [variant_id], references: [id])
+  
+  // Detalle de la línea
+  quantity        Int
+  unit_price      Float    // Precio al momento de la venta
+  discount        Float    @default(0) // Descuento por línea
+  subtotal        Float    // Calculado: quantity * unit_price - discount
+  
+  // Descripción snapshot (por si cambia el producto después)
+  product_name    String   // Nombre del producto en el momento de la venta
+  product_sku     String?  // SKU en el momento de la venta
+  notes           String?  // Notas específicas de esta línea
+  
+  date_created    DateTime @default(now())
+
+  @@map("order_items")
+}
+
+// Variantes de Producto
+model ProductVariant {
+  id            String    @id @default(uuid())
+  product_id    String
+  product       Product   @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  sku_variant   String    // SKU específico de la variante
+  attributes    Json      // {"Color": "Rojo", "Talla": "XL", "Material": "Algodón"}
+  
+  // Precio específico de la variante (opcional, hereda del producto si es null)
+  price_override Float?
+  
+  // Stock por almacén (relación con Inventory)
+  inventory     Inventory[]
+  
+  // Relaciones con items de orden y compra
+  orderItems    OrderItem[]
+  purchaseItems PurchaseItem[]
+  stockMovements StockMovement[]
+  
+  // Imagen específica de la variante
+  image_url     String?
+  
+  is_active     Boolean   @default(true)
+  
+  date_created  DateTime  @default(now())
+  date_updated  DateTime  @updatedAt
+
+  @@unique([product_id, sku_variant])
+  @@map("product_variants")
+}
+
+// Proveedores
+model Supplier {
+  id              String    @id @default(uuid())
+  workspace_id    String
+  workspace       Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  
+  name            String    // Razón social
+  document_type   String    @default("RUC") // RUC | DNI
+  document_number String
+  contact_name    String?   // Nombre del contacto
+  phone           String?
+  email           String?
+  address         String?
+  website         String?
+  
+  // Campos comerciales
+  payment_terms   String?   // Términos de pago (ej: "30 días")
+  lead_time_days  Int?      // Tiempo de entrega promedio
+  notes           String?   // Observaciones internas
+  
+  is_active       Boolean   @default(true)
+  
+  // Relaciones
+  purchases       Purchase[]
+  
+  date_created    DateTime  @default(now())
+  date_updated    DateTime  @updatedAt
+
+  @@unique([workspace_id, document_number])
+  @@map("suppliers")
+}
+
+// Órdenes de Compra
+model Purchase {
+  id              String    @id @default(uuid())
+  order_number    String?   @unique
+  workspace_id    String
+  workspace       Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  
+  supplier_id     String
+  supplier        Supplier  @relation(fields: [supplier_id], references: [id])
+  
+  warehouse_id    String    // Almacén destino
+  warehouse       Warehouse @relation(fields: [warehouse_id], references: [id])
+  
+  // Estado
+  status          String    @default("DRAFT") // DRAFT | ORDERED | RECEIVED | CANCELLED
+  
+  // Totales
+  subtotal        Float     @default(0)
+  tax_amount      Float     @default(0)
+  total_amount    Float     @default(0)
+  
+  // Fechas
+  order_date      DateTime  @default(now())
+  expected_date   DateTime?
+  received_date   DateTime?
+  
+  // Documento
+  invoice_number  String?
+  invoice_url     String?   // URL del documento escaneado
+  
+  notes           String?
+  
+  // Relaciones
+  items           PurchaseItem[]
+  stockMovements  StockMovement[]
+  
+  date_created    DateTime  @default(now())
+  date_updated    DateTime  @updatedAt
+
+  @@map("purchases")
+}
+
+// Items de Compra
+model PurchaseItem {
+  id              String    @id @default(uuid())
+  
+  purchase_id     String
+  purchase        Purchase  @relation(fields: [purchase_id], references: [id], onDelete: Cascade)
+  
+  product_id      String
+  product         Product   @relation(fields: [product_id], references: [id])
+  
+  variant_id      String?
+  variant         ProductVariant? @relation(fields: [variant_id], references: [id])
+  
+  quantity_ordered Int
+  quantity_received Int      @default(0) // Para recibos parciales
+  
+  unit_cost       Float     // Costo unitario
+  subtotal        Float     // quantity_ordered * unit_cost
+  
+  date_created    DateTime  @default(now())
+
+  @@map("purchase_items")
+}
+
+// Tickets de Soporte
+model SupportTicket {
+  id              String    @id @default(uuid())
+  workspace_id    String
+  workspace       Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  
+  // Vinculación con orden (opcional)
+  order_id        String?
+  order           Order?    @relation(fields: [order_id], references: [id])
+  
+  // Tipo de ticket
+  type            String    // RETURN | EXCHANGE | WARRANTY | COMPLAINT | QUESTION | OTHER
+  
+  // Prioridad
+  priority        String    @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
+  
+  // Estado
+  status          String    @default("OPEN") // OPEN | IN_PROGRESS | WAITING | RESOLVED | CLOSED
+  
+  // Detalle
+  subject         String
+  description     String    @db.Text
+  
+  // Resolución
+  resolution      String?   @db.Text
+  resolved_at     DateTime?
+  resolved_by     String?   // User ID
+  
+// Fechas
+   created_by      String    // User ID (agente de soporte)
+   assigned_to     String?   // User ID (agente de soporte)
+   
+   // Comentarios
+   comments        SupportTicketComment[]
+
+   date_created    DateTime  @default(now())
+   date_updated    DateTime  @updatedAt
+
+   @@index([workspace_id, status])
+   @@index([workspace_id, order_id])
+   @@map("support_tickets")
+}
+
+// Cierres de Caja
+model CashClosure {
+  id              String    @id @default(uuid())
+  workspace_id    String
+  workspace       Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  
+  opened_at       DateTime  @default(now())
+  closed_at       DateTime?
+  
+  opened_by       String    // User ID
+  closed_by       String?   // User ID
+  
+  // Montos iniciales
+  initial_amount  Float     @default(0)
+  
+  // Ventas del período
+  total_sales     Float     @default(0) // Total de órdenes pagadas
+  total_cash      Float     @default(0)
+  total_transfer  Float     @default(0)
+  total_yape_plin Float     @default(0)
+  
+  // Ajustes
+  adjustment_amount Float   @default(0) // Diferencia entre lo esperado y lo real
+  adjustment_note   String?
+  
+  // Estado
+  status          String    @default("OPEN") // OPEN | CLOSED
+  
+  date_created    DateTime  @default(now())
+  date_updated    DateTime  @updatedAt
+
+  @@map("cash_closures")
+}
+
+// Comentarios de Tickets de Soporte
+model SupportTicketComment {
+   id              String         @id @default(uuid())
+   ticket_id       String
+   ticket          SupportTicket  @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+   content         String         @db.Text
+   created_by      String
+   is_internal     Boolean        @default(false)
+   date_created    DateTime       @default(now())
+
+   @@index([ticket_id, date_created])
+   @@map("support_ticket_comments")
+}
+
+
+
+// ============================================
+// MODELOS EXISTENTES ACTUALIZADOS
+// ============================================
+
+// Facturación y Clientes
+model Client {
+  id             String    @id @default(uuid())
+  workspace_id   String
+  workspace      Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  
+  // Datos principales
+  name           String    // Razón Social o Nombre Completo
+document_type  String    @default("RUC") // RUC | DNI | CE | PAS | NOT_APPLY
+   document_number String?
+  
+  // Contacto
+  email          String?
+  phone          String?
+  
+  // Dirección y Ubicación
+  address        String?
+  district_id    String?
+  reference      String?
+
+  // NUEVOS CAMPOS - POWIP
+  client_type    String    @default("TRADITIONAL") // TRADITIONAL | WHOLESALE
+  total_purchases Int      @default(0)
+  total_spent    Float     @default(0)
+  last_purchase_date DateTime?
+  
+  // Relación con órdenes
+  orders         Order[]
+  
+  date_created   DateTime  @default(now())
+  date_updated   DateTime  @updatedAt
+  
+  status         String    @default("active") // active | inactive
+
+@@map("clients")
+}
+
+model Category {
+  id            String    @id @default(uuid())
+  workspace_id  String
+  workspace     Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  products      Product[]
+  date_created  DateTime  @default(now())
+  date_updated  DateTime  @updatedAt
+
+  @@unique([workspace_id, name])
+  @@map("categories")
+}
+
+model Product {
+  id            String    @id @default(uuid())
+  workspace_id  String
+  workspace     Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  
+  name          String
+  sku           String?   // Código de barra o interno
+  description   String?
+  
+  // NUEVOS CAMPOS - POWIP
+  gallery       Json?     // Array de URLs: ["url1", "url2", "url3"]
+  description_html String? @db.Text // Descripción en HTML
+  
+  // Precio y Costo
+  price         Float     @default(0)
+  cost          Float     @default(0)
+  
+  min_stock     Float     @default(0) // Alerta de stock mínimo global
+  
+  // Relaciones
+  category_id   String?
+  category      Category? @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  
+  inventory     Inventory[]
+  movements     StockMovement[]
+  
+  // NUEVAS RELACIONES - POWIP
+  variants      ProductVariant[]
+  orderItems    OrderItem[]
+  purchaseItems PurchaseItem[]
+  
+  unit          String    @default("UND") // UND, KGS, MTS, etc.
+  
+  status        String    @default("active") // active | inactive
+  
+  date_created  DateTime  @default(now())
+  date_updated  DateTime  @updatedAt
+
+  @@unique([workspace_id, sku])
+  @@map("products")
+}
+
+model Warehouse {
+  id            String      @id @default(uuid())
+  workspace_id  String
+  workspace     Workspace   @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  name          String
+  address       String?
+  is_active     Boolean     @default(true)
+  
+  inventory     Inventory[]
+  movements     StockMovement[]
+  
+  // NUEVAS RELACIONES - POWIP
+  orders        Order[]     // Órdenes despachadas desde este almacén
+  purchases     Purchase[]  // Compras recibidas en este almacén
+  
+  date_created  DateTime    @default(now())
+  date_updated  DateTime    @updatedAt
+
+  @@unique([workspace_id, name])
+  @@map("warehouses")
+}
+
+model Inventory {
+  id            String    @id @default(uuid())
+  product_id    String
+  product       Product   @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  warehouse_id  String
+  warehouse     Warehouse @relation(fields: [warehouse_id], references: [id], onDelete: Cascade)
+  
+  // NUEVO CAMPO - POWIP
+  variant_id    String?
+  variant       ProductVariant? @relation(fields: [variant_id], references: [id])
+  
+  stock         Float     @default(0)
+  
+  date_updated  DateTime  @updatedAt
+
+  @@unique([product_id, warehouse_id, variant_id])
+  @@map("inventory")
+}
+
+model StockMovement {
+  id            String    @id @default(uuid())
+  product_id    String
+  product       Product   @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  warehouse_id  String
+  warehouse     Warehouse @relation(fields: [warehouse_id], references: [id], onDelete: Cascade)
+  
+  // NUEVOS CAMPOS - POWIP
+  variant_id    String?
+  variant       ProductVariant? @relation(fields: [variant_id], references: [id])
+
+  quantity      Float     // Positivo entrada, Negativo salida
+  type          String    // IN | OUT | TRANSFER | ADJUSTMENT
+  reason        String?   // 'Venta', 'Compra', 'Ajuste', etc.
+  
+  order_id      String?   // Si es movimiento por venta
+  order         Order?    @relation(fields: [order_id], references: [id])
+  
+  purchase_id   String?   // Si es movimiento por compra
+  purchase      Purchase? @relation(fields: [purchase_id], references: [id])
+  
+  reference_id  String?   // ID de documento relacionado
+  
+  date_created  DateTime  @default(now())
+
+  @@map("stock_movements")
+}

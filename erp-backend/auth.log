@@ -1,0 +1,266 @@
+2026-04-24T23:38:56.653Z - Controller: POST /api-keys?workspaceId=3858ad14-f97f-4bf6-bd72-a2abb82a2474, name=WAZEND, user=undefined
+2026-04-24T23:38:56.655Z - STP 1: Intentando crear API Key. User: undefined, Workspace: 3858ad14-f97f-4bf6-bd72-a2abb82a2474, Name: WAZEND
+2026-04-24T23:38:56.656Z - STP 2: Datos generados. Hash: f17f5f8936...
+2026-04-24T23:38:56.680Z - FATAL ERROR en ApiKeysService.create: 
+Invalid `this.prisma.apiKey.create()` invocation in
+C:\Users\RANGEL\Desktop\ERP\erp-backend\src\api-keys\api-keys.service.ts:29:53
+
+  26 
+  27 log(`STP 2: Datos generados. Hash: ${keyHash.substring(0, 10)}...`);
+  28 
+→ 29 const apiKey = await this.prisma.apiKey.create({
+       data: {
+         name: "WAZEND",
+         key_prefix: "ak_erp_deb****",
+         key_hash: "f17f5f8936fe73ef6a50c9dacbf045cf43782af15a3d5bc2baf7063ac3002986",
+         user_id: undefined,
+         workspace_id: "3858ad14-f97f-4bf6-bd72-a2abb82a2474",
+         expires_at: undefined,
+     +   workspace: {
+     +     create: WorkspaceCreateWithoutApiKeysInput | WorkspaceUncheckedCreateWithoutApiKeysInput,
+     +     connectOrCreate: WorkspaceCreateOrConnectWithoutApiKeysInput,
+     +     connect: WorkspaceWhereUniqueInput
+     +   }
+       }
+     })
+
+Argument `workspace` is missing.
+2026-04-24T23:38:56.682Z - PrismaClientValidationError: 
+Invalid `this.prisma.apiKey.create()` invocation in
+C:\Users\RANGEL\Desktop\ERP\erp-backend\src\api-keys\api-keys.service.ts:29:53
+
+  26 
+  27 log(`STP 2: Datos generados. Hash: ${keyHash.substring(0, 10)}...`);
+  28 
+→ 29 const apiKey = await this.prisma.apiKey.create({
+       data: {
+         name: "WAZEND",
+         key_prefix: "ak_erp_deb****",
+         key_hash: "f17f5f8936fe73ef6a50c9dacbf045cf43782af15a3d5bc2baf7063ac3002986",
+         user_id: undefined,
+         workspace_id: "3858ad14-f97f-4bf6-bd72-a2abb82a2474",
+         expires_at: undefined,
+     +   workspace: {
+     +     create: WorkspaceCreateWithoutApiKeysInput | WorkspaceUncheckedCreateWithoutApiKeysInput,
+     +     connectOrCreate: WorkspaceCreateOrConnectWithoutApiKeysInput,
+     +     connect: WorkspaceWhereUniqueInput
+     +   }
+       }
+     })
+
+Argument `workspace` is missing.
+    at wn (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async ApiKeysService.create (C:\Users\RANGEL\Desktop\ERP\erp-backend\src\api-keys\api-keys.service.ts:29:28)
+    at async C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+2026-04-24T23:38:58.021Z - Controller: POST /api-keys?workspaceId=3858ad14-f97f-4bf6-bd72-a2abb82a2474, name=WAZEND, user=undefined
+2026-04-24T23:38:58.027Z - STP 1: Intentando crear API Key. User: undefined, Workspace: 3858ad14-f97f-4bf6-bd72-a2abb82a2474, Name: WAZEND
+2026-04-24T23:38:58.028Z - STP 2: Datos generados. Hash: 4b29bfde2d...
+2026-04-24T23:38:58.031Z - FATAL ERROR en ApiKeysService.create: 
+Invalid `this.prisma.apiKey.create()` invocation in
+C:\Users\RANGEL\Desktop\ERP\erp-backend\src\api-keys\api-keys.service.ts:29:53
+
+  26 
+  27 log(`STP 2: Datos generados. Hash: ${keyHash.substring(0, 10)}...`);
+  28 
+→ 29 const apiKey = await this.prisma.apiKey.create({
+       data: {
+         name: "WAZEND",
+         key_prefix: "ak_erp_bbe****",
+         key_hash: "4b29bfde2dab483dfb9811b2bd745684b02959d10785b10edc1caf3d76cff9f1",
+         user_id: undefined,
+         workspace_id: "3858ad14-f97f-4bf6-bd72-a2abb82a2474",
+         expires_at: undefined,
+     +   workspace: {
+     +     create: WorkspaceCreateWithoutApiKeysInput | WorkspaceUncheckedCreateWithoutApiKeysInput,
+     +     connectOrCreate: WorkspaceCreateOrConnectWithoutApiKeysInput,
+     +     connect: WorkspaceWhereUniqueInput
+     +   }
+       }
+     })
+
+Argument `workspace` is missing.
+2026-04-24T23:38:58.033Z - PrismaClientValidationError: 
+Invalid `this.prisma.apiKey.create()` invocation in
+C:\Users\RANGEL\Desktop\ERP\erp-backend\src\api-keys\api-keys.service.ts:29:53
+
+  26 
+  27 log(`STP 2: Datos generados. Hash: ${keyHash.substring(0, 10)}...`);
+  28 
+→ 29 const apiKey = await this.prisma.apiKey.create({
+       data: {
+         name: "WAZEND",
+         key_prefix: "ak_erp_bbe****",
+         key_hash: "4b29bfde2dab483dfb9811b2bd745684b02959d10785b10edc1caf3d76cff9f1",
+         user_id: undefined,
+         workspace_id: "3858ad14-f97f-4bf6-bd72-a2abb82a2474",
+         expires_at: undefined,
+     +   workspace: {
+     +     create: WorkspaceCreateWithoutApiKeysInput | WorkspaceUncheckedCreateWithoutApiKeysInput,
+     +     connectOrCreate: WorkspaceCreateOrConnectWithoutApiKeysInput,
+     +     connect: WorkspaceWhereUniqueInput
+     +   }
+       }
+     })
+
+Argument `workspace` is missing.
+    at wn (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async ApiKeysService.create (C:\Users\RANGEL\Desktop\ERP\erp-backend\src\api-keys\api-keys.service.ts:29:28)
+    at async C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+2026-04-24T23:38:58.720Z - Controller: POST /api-keys?workspaceId=3858ad14-f97f-4bf6-bd72-a2abb82a2474, name=WAZEND, user=undefined
+2026-04-24T23:38:58.721Z - STP 1: Intentando crear API Key. User: undefined, Workspace: 3858ad14-f97f-4bf6-bd72-a2abb82a2474, Name: WAZEND
+2026-04-24T23:38:58.722Z - STP 2: Datos generados. Hash: 6bc735e4b9...
+2026-04-24T23:38:58.726Z - FATAL ERROR en ApiKeysService.create: 
+Invalid `this.prisma.apiKey.create()` invocation in
+C:\Users\RANGEL\Desktop\ERP\erp-backend\src\api-keys\api-keys.service.ts:29:53
+
+  26 
+  27 log(`STP 2: Datos generados. Hash: ${keyHash.substring(0, 10)}...`);
+  28 
+→ 29 const apiKey = await this.prisma.apiKey.create({
+       data: {
+         name: "WAZEND",
+         key_prefix: "ak_erp_890****",
+         key_hash: "6bc735e4b92b8f24c9f37e22ff2e1f52e43b8c12501ae953d78adfd4a7ea6a15",
+         user_id: undefined,
+         workspace_id: "3858ad14-f97f-4bf6-bd72-a2abb82a2474",
+         expires_at: undefined,
+     +   workspace: {
+     +     create: WorkspaceCreateWithoutApiKeysInput | WorkspaceUncheckedCreateWithoutApiKeysInput,
+     +     connectOrCreate: WorkspaceCreateOrConnectWithoutApiKeysInput,
+     +     connect: WorkspaceWhereUniqueInput
+     +   }
+       }
+     })
+
+Argument `workspace` is missing.
+2026-04-24T23:38:58.728Z - PrismaClientValidationError: 
+Invalid `this.prisma.apiKey.create()` invocation in
+C:\Users\RANGEL\Desktop\ERP\erp-backend\src\api-keys\api-keys.service.ts:29:53
+
+  26 
+  27 log(`STP 2: Datos generados. Hash: ${keyHash.substring(0, 10)}...`);
+  28 
+→ 29 const apiKey = await this.prisma.apiKey.create({
+       data: {
+         name: "WAZEND",
+         key_prefix: "ak_erp_890****",
+         key_hash: "6bc735e4b92b8f24c9f37e22ff2e1f52e43b8c12501ae953d78adfd4a7ea6a15",
+         user_id: undefined,
+         workspace_id: "3858ad14-f97f-4bf6-bd72-a2abb82a2474",
+         expires_at: undefined,
+     +   workspace: {
+     +     create: WorkspaceCreateWithoutApiKeysInput | WorkspaceUncheckedCreateWithoutApiKeysInput,
+     +     connectOrCreate: WorkspaceCreateOrConnectWithoutApiKeysInput,
+     +     connect: WorkspaceWhereUniqueInput
+     +   }
+       }
+     })
+
+Argument `workspace` is missing.
+    at wn (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async ApiKeysService.create (C:\Users\RANGEL\Desktop\ERP\erp-backend\src\api-keys\api-keys.service.ts:29:28)
+    at async C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+2026-04-24T23:38:59.230Z - Controller: POST /api-keys?workspaceId=3858ad14-f97f-4bf6-bd72-a2abb82a2474, name=WAZEND, user=undefined
+2026-04-24T23:38:59.231Z - STP 1: Intentando crear API Key. User: undefined, Workspace: 3858ad14-f97f-4bf6-bd72-a2abb82a2474, Name: WAZEND
+2026-04-24T23:38:59.233Z - STP 2: Datos generados. Hash: 9313d1a599...
+2026-04-24T23:38:59.244Z - FATAL ERROR en ApiKeysService.create: 
+Invalid `this.prisma.apiKey.create()` invocation in
+C:\Users\RANGEL\Desktop\ERP\erp-backend\src\api-keys\api-keys.service.ts:29:53
+
+  26 
+  27 log(`STP 2: Datos generados. Hash: ${keyHash.substring(0, 10)}...`);
+  28 
+→ 29 const apiKey = await this.prisma.apiKey.create({
+       data: {
+         name: "WAZEND",
+         key_prefix: "ak_erp_eb3****",
+         key_hash: "9313d1a599074e75ef007e3eeba77263a6e3e7dff72ffdd6c32095a315674615",
+         user_id: undefined,
+         workspace_id: "3858ad14-f97f-4bf6-bd72-a2abb82a2474",
+         expires_at: undefined,
+     +   workspace: {
+     +     create: WorkspaceCreateWithoutApiKeysInput | WorkspaceUncheckedCreateWithoutApiKeysInput,
+     +     connectOrCreate: WorkspaceCreateOrConnectWithoutApiKeysInput,
+     +     connect: WorkspaceWhereUniqueInput
+     +   }
+       }
+     })
+
+Argument `workspace` is missing.
+2026-04-24T23:38:59.246Z - PrismaClientValidationError: 
+Invalid `this.prisma.apiKey.create()` invocation in
+C:\Users\RANGEL\Desktop\ERP\erp-backend\src\api-keys\api-keys.service.ts:29:53
+
+  26 
+  27 log(`STP 2: Datos generados. Hash: ${keyHash.substring(0, 10)}...`);
+  28 
+→ 29 const apiKey = await this.prisma.apiKey.create({
+       data: {
+         name: "WAZEND",
+         key_prefix: "ak_erp_eb3****",
+         key_hash: "9313d1a599074e75ef007e3eeba77263a6e3e7dff72ffdd6c32095a315674615",
+         user_id: undefined,
+         workspace_id: "3858ad14-f97f-4bf6-bd72-a2abb82a2474",
+         expires_at: undefined,
+     +   workspace: {
+     +     create: WorkspaceCreateWithoutApiKeysInput | WorkspaceUncheckedCreateWithoutApiKeysInput,
+     +     connectOrCreate: WorkspaceCreateOrConnectWithoutApiKeysInput,
+     +     connect: WorkspaceWhereUniqueInput
+     +   }
+       }
+     })
+
+Argument `workspace` is missing.
+    at wn (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async ApiKeysService.create (C:\Users\RANGEL\Desktop\ERP\erp-backend\src\api-keys\api-keys.service.ts:29:28)
+    at async C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async C:\Users\RANGEL\Desktop\ERP\erp-backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+2026-04-24T23:48:27.576Z - Controller: POST /api-keys?workspaceId=3858ad14-f97f-4bf6-bd72-a2abb82a2474, name=WAZEND, user=6e55b0a5-ae5c-49df-8590-c9eae3fd3336
+2026-04-24T23:48:27.583Z - STP 1: Intentando crear API Key. User: 6e55b0a5-ae5c-49df-8590-c9eae3fd3336, Workspace: 3858ad14-f97f-4bf6-bd72-a2abb82a2474, Name: WAZEND
+2026-04-24T23:48:27.598Z - STP 2: Datos generados. Hash: 0723f08c5a...
+2026-04-24T23:48:27.664Z - STP 3: API Key insertada en BD: e97fbb8d-32c4-4b10-85a9-d10d6bf12345
+2026-04-24T23:48:27.665Z - STP 4: Intentando registrar Auditoría...
+2026-04-24T23:48:27.690Z - STP 5: Auditoría registrada.
+2026-04-24T23:57:05.046Z - Controller: POST /api-keys?workspaceId=3858ad14-f97f-4bf6-bd72-a2abb82a2474, name=WAZEND, user=6e55b0a5-ae5c-49df-8590-c9eae3fd3336
+2026-04-24T23:57:05.049Z - STP 1: Intentando crear API Key. User: 6e55b0a5-ae5c-49df-8590-c9eae3fd3336, Workspace: 3858ad14-f97f-4bf6-bd72-a2abb82a2474, Name: WAZEND
+2026-04-24T23:57:05.052Z - STP 2: Datos generados. Hash: f267b6bcbc...
+2026-04-24T23:57:05.080Z - STP 3: API Key insertada en BD: 4a87d5e1-1003-4aca-8d85-0bea5fa68150
+2026-04-24T23:57:05.080Z - STP 4: Intentando registrar Auditoría...
+2026-04-24T23:57:05.086Z - STP 5: Auditoría registrada.
+2026-04-24T23:57:55.915Z - Controller: POST /api-keys?workspaceId=3858ad14-f97f-4bf6-bd72-a2abb82a2474, name=WAZEND, user=6e55b0a5-ae5c-49df-8590-c9eae3fd3336
+2026-04-24T23:57:55.917Z - STP 1: Intentando crear API Key. User: 6e55b0a5-ae5c-49df-8590-c9eae3fd3336, Workspace: 3858ad14-f97f-4bf6-bd72-a2abb82a2474, Name: WAZEND
+2026-04-24T23:57:55.917Z - STP 2: Datos generados. Hash: e69ff191da...
+2026-04-24T23:57:55.949Z - STP 3: API Key insertada en BD: 2998f13d-74d5-40b7-88c1-9c2c77d39b78
+2026-04-24T23:57:55.949Z - STP 4: Intentando registrar Auditoría...
+2026-04-24T23:57:55.957Z - STP 5: Auditoría registrada.
+2026-04-24T23:58:26.149Z - Controller: POST /api-keys?workspaceId=3858ad14-f97f-4bf6-bd72-a2abb82a2474, name=WAZEND, user=6e55b0a5-ae5c-49df-8590-c9eae3fd3336
+2026-04-24T23:58:26.150Z - STP 1: Intentando crear API Key. User: 6e55b0a5-ae5c-49df-8590-c9eae3fd3336, Workspace: 3858ad14-f97f-4bf6-bd72-a2abb82a2474, Name: WAZEND
+2026-04-24T23:58:26.150Z - STP 2: Datos generados. Hash: 84308ace10...
+2026-04-24T23:58:26.181Z - STP 3: API Key insertada en BD: b7cfca74-c589-4d5d-a18d-a68f9dadb4d8
+2026-04-24T23:58:26.181Z - STP 4: Intentando registrar Auditoría...
+2026-04-24T23:58:26.191Z - STP 5: Auditoría registrada.
+2026-04-25T01:01:48.457Z - Controller: POST /api-keys?workspaceId=3858ad14-f97f-4bf6-bd72-a2abb82a2474, name=1, user=6e55b0a5-ae5c-49df-8590-c9eae3fd3336
+2026-04-25T01:01:48.464Z - STP 1: Intentando crear API Key. User: 6e55b0a5-ae5c-49df-8590-c9eae3fd3336, Workspace: 3858ad14-f97f-4bf6-bd72-a2abb82a2474, Name: 1
+2026-04-25T01:01:48.465Z - STP 2: Datos generados. Hash: 627cd54852...
+2026-04-25T01:01:48.499Z - STP 3: API Key insertada en BD: f71af969-1db5-45e2-abf4-a9450bca9133
+2026-04-25T01:01:48.500Z - STP 4: Intentando registrar Auditoría...
+2026-04-25T01:01:48.511Z - STP 5: Auditoría registrada.

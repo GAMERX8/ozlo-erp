@@ -1,0 +1,9 @@
+export { HeroSection } from "./hero-section";
+export { TrustSection } from "./trust-section";
+export { HowItWorksSection } from "./how-it-works-section";
+export { ComparisonSection } from "./comparison-section";
+export { TestimonialsSection } from "./testimonials-section";
+export { UseCasesSection } from "./use-cases-section";
+export { FinalCTASection } from "./final-cta-section";
+export { LandingNavbar } from "./navbar";
+export { LandingFooter } from "./footer";
