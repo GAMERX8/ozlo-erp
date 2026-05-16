@@ -84,7 +84,16 @@ export function NavUser({
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuGroup>
-                        <DropdownMenuItem onClick={() => router.push(`/workspaces/${currentWorkspaceId}/account`)} className="cursor-pointer">
+                        <DropdownMenuItem 
+                            onClick={() => {
+                                if (currentWorkspaceId) {
+                                    router.push(`/workspaces/${currentWorkspaceId}/account`)
+                                } else {
+                                    router.push("/workspaces")
+                                }
+                            }} 
+                            className="cursor-pointer"
+                        >
                             <UserIcon className="mr-2 size-4" />
                             <span>Mi cuenta</span>
                         </DropdownMenuItem>
@@ -165,7 +174,16 @@ export function NavUser({
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                    <DropdownMenuItem onClick={() => router.push(`/workspaces/${currentWorkspaceId}/account`)} className="cursor-pointer">
+                    <DropdownMenuItem 
+                        onClick={() => {
+                            if (currentWorkspaceId) {
+                                router.push(`/workspaces/${currentWorkspaceId}/account`)
+                            } else {
+                                router.push("/workspaces")
+                            }
+                        }} 
+                        className="cursor-pointer"
+                    >
                         <UserIcon className="mr-2 size-4" />
                         <span>Mi cuenta</span>
                     </DropdownMenuItem>
