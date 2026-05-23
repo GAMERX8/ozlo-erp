@@ -270,7 +270,7 @@ export default async function SalesAnalyticsPage({ params, searchParams }: Sales
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between mb-1">
                                             <p className="font-medium text-sm">
-                                                {region.region === "lima" ? "Lima Metropolitana" : "Provincias"}
+                                                {(region.region as string) === "lima" ? "Lima Metropolitana" : "Provincias"}
                                             </p>
                                             <p className="text-sm font-medium">
                                                 S/ {region.amount.toLocaleString("es-PE", { minimumFractionDigits: 2 })}
