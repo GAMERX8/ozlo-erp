@@ -178,7 +178,7 @@ export async function getOrdersByStatus(
     return { success: true, data };
   } catch (error) {
     const statuses: OrderStatus[] = [
-      "pending", "contacted", "confirmed", "preparing", "shipped", "delivered", "cancelled",
+      "NO_CONFIRMED", "CONTACTED", "CONFIRMED", "PREPARING", "SHIPPED", "DELIVERED", "CANCELLED",
     ];
 
     return {
@@ -257,7 +257,7 @@ export async function getRecentOrders(
 
     return { success: true, data };
   } catch (error) {
-    const statuses: OrderStatus[] = ["pending", "confirmed", "shipped", "delivered"];
+    const statuses: OrderStatus[] = ["NO_CONFIRMED", "CONFIRMED", "SHIPPED", "DELIVERED"];
     const clients = ["Juan Pérez", "María García", "Carlos López", "Ana Rodríguez", "Luis Martínez"];
 
     return {
@@ -343,15 +343,15 @@ export async function getSalesAnalytics(
         totalSales: { amount: 485320.5, change: 15.3, orders: 486 },
         averageOrderValue: { amount: 998.6, change: 4.2 },
         salesByChannel: [
-          { channel: "facebook", amount: 145596, orders: 146, percentage: 30 },
-          { channel: "whatsapp", amount: 121330, orders: 122, percentage: 25 },
-          { channel: "instagram", amount: 97064, orders: 97, percentage: 20 },
-          { channel: "tiktok", amount: 72798, orders: 73, percentage: 15 },
-          { channel: "other", amount: 48532, orders: 48, percentage: 10 },
+          { channel: "FACEBOOK", amount: 145596, orders: 146, percentage: 30 },
+          { channel: "WHATSAPP", amount: 121330, orders: 122, percentage: 25 },
+          { channel: "INSTAGRAM", amount: 97064, orders: 97, percentage: 20 },
+          { channel: "TIKTOK", amount: 72798, orders: 73, percentage: 15 },
+          { channel: "OTHER", amount: 48532, orders: 48, percentage: 10 },
         ],
         salesByRegion: [
-          { region: "lima", amount: 339324, orders: 340, percentage: 70 },
-          { region: "province", amount: 145996, orders: 146, percentage: 30 },
+          { region: "LIMA", amount: 339324, orders: 340, percentage: 70 },
+          { region: "PROVINCE", amount: 145996, orders: 146, percentage: 30 },
         ],
         salesOverTime,
         topProducts: [
@@ -424,22 +424,22 @@ export async function getOperationsAnalytics(
       success: true,
       data: {
         ordersByStatus: [
-          { status: "pending", count: 18, amount: 18000 },
-          { status: "contacted", count: 12, amount: 12000 },
-          { status: "confirmed", count: 25, amount: 35000 },
-          { status: "preparing", count: 15, amount: 22500 },
-          { status: "shipped", count: 30, amount: 45000 },
-          { status: "delivered", count: 180, amount: 270000 },
-          { status: "cancelled", count: 8, amount: 8000 },
-          { status: "returned", count: 3, amount: 3000 },
+          { status: "NO_CONFIRMED", count: 18, amount: 18000 },
+          { status: "CONTACTED", count: 12, amount: 12000 },
+          { status: "CONFIRMED", count: 25, amount: 35000 },
+          { status: "PREPARING", count: 15, amount: 22500 },
+          { status: "SHIPPED", count: 30, amount: 45000 },
+          { status: "DELIVERED", count: 180, amount: 270000 },
+          { status: "CANCELLED", count: 8, amount: 8000 },
+          { status: "RETURNED", count: 3, amount: 3000 },
         ],
         averageTimeByStatus: [
-          { status: "pending", average_hours: 2.5, count: 18 },
-          { status: "contacted", average_hours: 4.0, count: 12 },
-          { status: "confirmed", average_hours: 8.0, count: 25 },
-          { status: "preparing", average_hours: 12.0, count: 15 },
-          { status: "shipped", average_hours: 24.0, count: 30 },
-          { status: "delivered", average_hours: 48.0, count: 180 },
+          { status: "NO_CONFIRMED", average_hours: 2.5, count: 18 },
+          { status: "CONTACTED", average_hours: 4.0, count: 12 },
+          { status: "CONFIRMED", average_hours: 8.0, count: 25 },
+          { status: "PREPARING", average_hours: 12.0, count: 15 },
+          { status: "SHIPPED", average_hours: 24.0, count: 30 },
+          { status: "DELIVERED", average_hours: 48.0, count: 180 },
         ],
         courierPerformance: [
           { courier_id: "1", courier_name: "Courier A", total_orders: 85, delivered_orders: 78, delivery_rate: 91.8, average_delivery_hours: 26.5 },

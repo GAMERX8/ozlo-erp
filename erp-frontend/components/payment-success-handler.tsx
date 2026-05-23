@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { getDeployStatus } from "@/lib/stripe-actions";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 

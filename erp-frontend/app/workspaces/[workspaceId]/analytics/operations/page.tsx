@@ -56,11 +56,11 @@ export default async function OperationsAnalyticsPage({ params }: OperationsAnal
     // Calcular estadísticas
     const totalOrders = data?.ordersByStatus.reduce((sum, s) => sum + s.count, 0) || 0;
     const activeOrders = data?.ordersByStatus.filter(s =>
-        ["pending", "contacted", "confirmed", "preparing", "shipped"].includes(s.status)
+        ["NO_CONFIRMED", "CONTACTED", "CONFIRMED", "PREPARING", "READY", "SHIPPED"].includes(s.status)
     ).reduce((sum, s) => sum + s.count, 0) || 0;
-    const completedOrders = data?.ordersByStatus.find(s => s.status === "delivered")?.count || 0;
+    const completedOrders = data?.ordersByStatus.find(s => s.status === "DELIVERED")?.count || 0;
     const cancelledOrders = data?.ordersByStatus.filter(s =>
-        ["cancelled", "returned"].includes(s.status)
+        ["CANCELLED", "RETURNED"].includes(s.status)
     ).reduce((sum, s) => sum + s.count, 0) || 0;
 
     return (

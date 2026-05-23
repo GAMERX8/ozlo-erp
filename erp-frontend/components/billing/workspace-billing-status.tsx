@@ -23,8 +23,6 @@ import {
     createBillingPortalSession,
     cancelWorkspaceSubscription,
     reactivateWorkspaceSubscription,
-    removeExtraSubscription,
-    reactivateExtraSubscription
 } from "@/lib/stripe-actions";
 import {
     Table,

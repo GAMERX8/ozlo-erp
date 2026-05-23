@@ -163,11 +163,11 @@ export default function EditOrderPage({
     if (order) {
       form.reset({
         client_id: order.client_id,
-        sales_channel: (order.channel || "WHATSAPP") as any,
+        sales_channel: (order.sales_channel || "WHATSAPP") as any,
         delivery_type: (order.delivery_type || "DELIVERY") as any,
-        region: (order.delivery_region || "LIMA") as any,
+        region: (order.region || "LIMA") as any,
         payment_method: (order.payment_method || "CASH") as any,
-        advance_amount: order.advance_payment || 0,
+        advance_amount: order.advance_amount || 0,
         shipping_address: order.shipping_address || "",
         shipping_reference: order.shipping_reference || "",
         notes: order.notes || "",

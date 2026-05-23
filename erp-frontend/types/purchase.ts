@@ -9,6 +9,7 @@ export interface PurchaseOrder {
     name: string;
     contact_name?: string;
     phone?: string;
+    document_number?: string;
   };
   warehouse_id: string;
   warehouse?: {

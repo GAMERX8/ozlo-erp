@@ -41,19 +41,19 @@ export async function generateMetadata({ params }: SalesAnalyticsPageProps): Pro
 }
 
 const channelIcons: Record<SalesChannel, typeof Facebook> = {
-    facebook: Facebook,
-    whatsapp: MessageCircle,
-    instagram: Instagram,
-    tiktok: Video,
-    other: Globe,
+    FACEBOOK: Facebook,
+    WHATSAPP: MessageCircle,
+    INSTAGRAM: Instagram,
+    TIKTOK: Video,
+    OTHER: Globe,
 };
 
 const channelColors: Record<SalesChannel, string> = {
-    facebook: "text-blue-600 bg-blue-500/10",
-    whatsapp: "text-green-600 bg-green-500/10",
-    instagram: "text-pink-600 bg-pink-500/10",
-    tiktok: "text-purple-600 bg-purple-500/10",
-    other: "text-gray-600 bg-gray-500/10",
+    FACEBOOK: "text-blue-600 bg-blue-500/10",
+    WHATSAPP: "text-green-600 bg-green-500/10",
+    INSTAGRAM: "text-pink-600 bg-pink-500/10",
+    TIKTOK: "text-purple-600 bg-purple-500/10",
+    OTHER: "text-gray-600 bg-gray-500/10",
 };
 
 export default async function SalesAnalyticsPage({ params, searchParams }: SalesAnalyticsPageProps) {
@@ -270,7 +270,7 @@ export default async function SalesAnalyticsPage({ params, searchParams }: Sales
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between mb-1">
                                             <p className="font-medium text-sm">
-                                                {region.region === "lima" ? "Lima Metropolitana" : "Provincias"}
+                                                {region.region === "LIMA" ? "Lima Metropolitana" : "Provincias"}
                                             </p>
                                             <p className="text-sm font-medium">
                                                 S/ {region.amount.toLocaleString("es-PE", { minimumFractionDigits: 2 })}

@@ -136,7 +136,7 @@ export default function SalesPage({
   const { data: ordersData, isLoading: ordersLoading } = useQuery<PaginatedOrders>({
     queryKey: ["orders", workspaceId, currentTab, selectedChannel, searchTerm, currentPage],
     queryFn: async () => {
-      if (!workspaceId) return { data: [], meta: { total: 0, page: 1, limit: 20, totalPages: 0 } };
+      if (!workspaceId) return { data: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 0 } };
 
       const filters: OrderFilters = {
         page: currentPage,
@@ -179,7 +179,7 @@ export default function SalesPage({
   });
 
   const orders = ordersData?.data || [];
-  const totalPages = ordersData?.meta?.totalPages || 1;
+  const totalPages = ordersData?.pagination?.totalPages || 1;
   const couriers = couriersData || [];
 
   const handleSelectAll = (checked: boolean) => {

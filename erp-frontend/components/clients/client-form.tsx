@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { 
@@ -60,7 +60,7 @@ export function ClientForm({ workspaceId, initialData, onSuccess }: ClientFormPr
   } = useUbigeo();
 
   const form = useForm<ClientFormValues>({
-    resolver: zodResolver(clientSchema),
+    resolver: zodResolver(clientSchema) as Resolver<ClientFormValues>,
     defaultValues: initialData 
       ? {
           name: initialData.name || "",

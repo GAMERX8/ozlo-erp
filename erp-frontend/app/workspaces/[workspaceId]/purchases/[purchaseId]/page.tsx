@@ -141,9 +141,9 @@ export default function PurchaseDetailPage({ params }: { params: Promise<{ works
     );
   }
 
-  const canSubmit = purchase.status === "DRAFT" || purchase.status === "draft";
-  const canReceive = purchase.status === "ORDERED" || purchase.status === "ordered" || purchase.status === "PARTIAL" || purchase.status === "partial";
-  const canCancel = purchase.status !== "RECEIVED" && purchase.status !== "received" && purchase.status !== "CANCELLED" && purchase.status !== "cancelled";
+  const canSubmit = purchase.status === "draft";
+  const canReceive = purchase.status === "ordered" || purchase.status === "partial";
+  const canCancel = purchase.status !== "received" && purchase.status !== "cancelled";
 
   return (
     <div className="flex flex-col animate-in fade-in duration-500 gap-6 pb-12">
