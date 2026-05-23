@@ -698,7 +698,7 @@ export default function OrderDetailPage({
           </Card>
 
           {/* Courier y Tracking - Siempre visible para entrega a domicilio o si ya tiene datos */}
-          {(order.courier || order.tracking_number || order.delivery_type === "DELIVERY" || order.delivery_type === "AGENCY") && (
+          {(order.courier || order.tracking_number || order.delivery_type === "DELIVERY") && (
             <Card className="border-primary/20 bg-primary/[0.02]">
               <CardHeader className="pb-3 px-4 pt-4">
                 <CardTitle className="text-sm font-bold flex items-center gap-2 text-primary">
