@@ -58,7 +58,7 @@ export default async function OperationsAnalyticsPage({ params }: OperationsAnal
     const activeOrders = data?.ordersByStatus.filter(s =>
         ["pending", "contacted", "confirmed", "preparing", "shipped"].includes(s.status)
     ).reduce((sum, s) => sum + s.count, 0) || 0;
-    const completedOrders = data?.ordersByStatus.find(s => s.status === "delivered")?.count || 0;
+    const completedOrders = data?.ordersByStatus.find(s => (s.status as string) === "delivered")?.count || 0;
     const cancelledOrders = data?.ordersByStatus.filter(s =>
         ["cancelled", "returned"].includes(s.status)
     ).reduce((sum, s) => sum + s.count, 0) || 0;
