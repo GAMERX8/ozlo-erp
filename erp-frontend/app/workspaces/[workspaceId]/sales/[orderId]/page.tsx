@@ -900,9 +900,46 @@ export default function OrderDetailPage({
               </div>
             </div>
           </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsCourierModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleAssignCourier} disabled={!selectedCourier || isProcessing} className="px-8">
-              {isProcessing ? "Asign
+                        <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setIsCourierModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleAssignCourier} disabled={!selectedCourier || isProcessing} className="px-8">
+                  {isProcessing ? "Asignando..." : "Confirmar Envío"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Modal eliminar */}
+          <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+            <DialogContent className="sm:max-w-[400px]">
+              <DialogHeader>
+                <DialogTitle className="text-destructive flex items-center gap-2">
+                  <Trash2 className="h-5 w-5" />
+                  ¿Eliminar esta orden?
+                </DialogTitle>
+                <DialogDescription className="pt-2">
+                  Estás a punto de eliminar permanentemente la orden <span className="font-bold text-foreground">{order.order_number}</span>.
+                  <br /><br />
+                  Esta acción eliminará todos los registros asociados, incluyendo el historial y los movimientos de inventario vinculados. <span className="font-bold">No se puede deshacer.</span>
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="mt-4 gap-2">
+                <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+                  Conservar Orden
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteOrder}
+                  disabled={isProcessing}
+                  className="px-8 font-bold"
+                >
+                  {isProcessing ? "Eliminando..." : "Eliminar Definitivamente"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      );
+    }
