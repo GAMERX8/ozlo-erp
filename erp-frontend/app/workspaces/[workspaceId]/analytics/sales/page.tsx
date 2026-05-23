@@ -48,7 +48,7 @@ const channelIcons: Record<string, typeof Facebook> = {
     other: Globe,
 };
 
-const channelColors: Record<SalesChannel, string> = {
+const channelColors: Record<string, string> = {
     facebook: "text-blue-600 bg-blue-500/10",
     whatsapp: "text-green-600 bg-green-500/10",
     instagram: "text-pink-600 bg-pink-500/10",
