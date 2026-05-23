@@ -100,7 +100,7 @@ const statusFlow: OrderStatus[] = [
   "DELIVERED",
 ];
 
-const statusIcons: Record<OrderStatus, React.ReactNode> = {
+const statusIcons: Record<string, React.ReactNode> = {
   NO_CONFIRMED: <Clock className="h-4 w-4" />,
   CONTACTED: <Phone className="h-4 w-4" />,
   PREPARING: <Package className="h-4 w-4" />,
