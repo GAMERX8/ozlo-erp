@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: SalesAnalyticsPageProps): Pro
     };
 }
 
-const channelIcons: Record<SalesChannel, typeof Facebook> = {
+const channelIcons: Record<string, typeof Facebook> = {
     facebook: Facebook,
     whatsapp: MessageCircle,
     instagram: Instagram,
