@@ -161,6 +161,7 @@ export default function EditOrderPage({
   // Cargar datos en el formulario
   useEffect(() => {
     if (order) {
+      const o = order as any;
       form.reset({
         client_id: order.client_id,
         sales_channel: (order.sales_channel || "WHATSAPP") as any,
@@ -171,7 +172,7 @@ export default function EditOrderPage({
         shipping_address: order.shipping_address || "",
         shipping_reference: order.shipping_reference || "",
         notes: order.notes || "",
-        internal_notes: (order as any).internal_notes || "",
+        internal_notes: o.internal_notes || "",
         courier_id: order.courier_id || null,
         estimated_delivery_date: order.estimated_delivery_date ? new Date(order.estimated_delivery_date) : null,
         items: order.items.map((item: any) => ({
@@ -265,7 +266,6 @@ export default function EditOrderPage({
 
     setIsSubmitting(true);
     
-    // Mapear el método de pago a los valores soportados por el backend
     const mapPaymentMethod = (method: string) => {
       const mapping: Record<string, string> = {
         'CASH': 'CASH',
