@@ -165,7 +165,7 @@ export default function EditOrderPage({
         client_id: order.client_id,
         sales_channel: ((order as any).channel || "WHATSAPP") as any,
         delivery_type: (order.delivery_type || "DELIVERY") as any,
-        region: (order.delivery_region || "LIMA") as any,
+        region: ((order as any).delivery_region || "LIMA") as any,
         payment_method: (order.payment_method || "CASH") as any,
         advance_amount: order.advance_payment || 0,
         shipping_address: order.shipping_address || "",
