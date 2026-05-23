@@ -16,7 +16,26 @@ async function bootstrap() {
   });
   
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      const origins = process.env.ALLOWED_ORIGINS
+        ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+        : ['http://localhost:3000'];
+      
+      const isAllowed = origins.some(allowed => {
+        if (allowed === '*') return true;
+        if (allowed.startsWith('*.')) {
+          const baseDomain = allowed.slice(2);
+          return origin.endsWith(baseDomain);
+        }
+        return allowed === origin;
+      });
+      
+      callback(null, isAllowed);
+    },
     credentials: true,
   });
 
