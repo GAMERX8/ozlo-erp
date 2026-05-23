@@ -91,7 +91,6 @@ export default function PurchaseDetailPage({ params }: { params: Promise<{ works
       setIsReceiveModalOpen(false);
       setReceivedItems({});
       
-      // Actualizar datos del workspace
       queryClient.invalidateQueries({ queryKey: ["purchase", purchaseId, workspaceId] });
       queryClient.invalidateQueries({ queryKey: ["purchases", workspaceId] });
       queryClient.invalidateQueries({ queryKey: ["products", workspaceId] });
@@ -99,8 +98,6 @@ export default function PurchaseDetailPage({ params }: { params: Promise<{ works
     },
     onError: (error: Error) => { toast.error(error.message); },
   });
-
-
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "-";
@@ -280,7 +277,7 @@ export default function PurchaseDetailPage({ params }: { params: Promise<{ works
                 </div>
                 <div className="flex flex-col">
                   <span className="font-bold text-sm tracking-tight">{purchase.supplier?.name}</span>
-                  {purchase.supplier?.document_number && <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">RUC: {purchase.supplier.document_number}</span>}
+                  {(purchase.supplier as any)?.document_number && <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">RUC: {(purchase.supplier as any).document_number}</span>}
                 </div>
               </div>
               <Separator className="opacity-50" />
