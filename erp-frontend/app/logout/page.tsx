@@ -50,7 +50,7 @@ export default function LogoutPage() {
             // Call NextAuth signOut
             await signOut({ 
                 redirect: true,
-                callbackUrl: "/login?logged_out=true" 
+                callbackUrl: `${window.location.origin}/login?logged_out=true` 
             });
         };
         
