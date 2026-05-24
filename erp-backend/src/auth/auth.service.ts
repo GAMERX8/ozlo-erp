@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, NotFoundException, ConflictException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
@@ -40,7 +40,8 @@ export class AuthService {
                     `Este correo ya está registrado con ${existingUser.provider === 'google' ? 'Google' : existingUser.provider}. Por favor inicia sesión con esa opción.`
                 );
             }
-            // Si es usuario local, el error de Prisma lo manejará (unique constraint)
+            // Si es usuario local, lanzamos ConflictException
+            throw new ConflictException('Este correo ya está registrado. Por favor inicia sesión.');
         }
 
         const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -75,16 +76,11 @@ export class AuthService {
         }
 
         // Enviar email de verificación
-        try {
-            await this.mailService.sendVerificationEmail(
-                user.email,
-                verifyToken,
-                user.first_name || undefined
-            );
-        } catch (emailError) {
-            this.logger.error(`Failed to send verification email to ${user.email}`, emailError);
-            // Continuamos el flujo aunque el email falle para no bloquear la creación de la cuenta
-        }
+        await this.mailService.sendVerificationEmail(
+            user.email,
+            verifyToken,
+            user.first_name || undefined
+        );
 
         // Audit log
         await this.auditService.log({
