@@ -75,11 +75,16 @@ export class AuthService {
         }
 
         // Enviar email de verificación
-        await this.mailService.sendVerificationEmail(
-            user.email,
-            verifyToken,
-            user.first_name || undefined
-        );
+        try {
+            await this.mailService.sendVerificationEmail(
+                user.email,
+                verifyToken,
+                user.first_name || undefined
+            );
+        } catch (emailError) {
+            this.logger.error(`Failed to send verification email to ${user.email}`, emailError);
+            // Continuamos el flujo aunque el email falle para no bloquear la creación de la cuenta
+        }
 
         // Audit log
         await this.auditService.log({
