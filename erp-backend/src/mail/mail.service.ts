@@ -1,20 +1,34 @@
 import { Injectable } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
+// Usando Fetch API para interactuar con Resend sin SMTP
 
 @Injectable()
 export class MailService {
-    private transporter: nodemailer.Transporter;
+    private async sendEmailHttp(options: { from: string; to: string; subject: string; html: string }) {
+        const apiKey = process.env.EMAIL_SMTP_PASSWORD;
+        if (!apiKey) {
+            console.warn('EMAIL_SMTP_PASSWORD no está configurado. No se enviará el correo.');
+            return;
+        }
 
-    constructor() {
-        this.transporter = nodemailer.createTransport({
-            host: process.env.EMAIL_SMTP_HOST || 'smtp.resend.com',
-            port: parseInt(process.env.EMAIL_SMTP_PORT || '587'),
-            secure: process.env.EMAIL_SMTP_SECURE === 'true',
-            auth: {
-                user: process.env.EMAIL_SMTP_USER || 'resend',
-                pass: process.env.EMAIL_SMTP_PASSWORD,
+        const response = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
             },
+            body: JSON.stringify({
+                from: options.from,
+                to: options.to,
+                subject: options.subject,
+                html: options.html
+            })
         });
+
+        if (!response.ok) {
+            const error = await response.text();
+            console.error('Error al enviar correo con Resend API:', error);
+            throw new Error(`Fallo al enviar correo: ${response.statusText}`);
+        }
     }
 
     async sendVerificationEmail(email: string, token: string, firstName?: string) {
@@ -22,7 +36,7 @@ export class MailService {
         const verificationUrl = `${appUrl}/verify-email?token=${token}`;
         const from = process.env.EMAIL_FROM || 'hello@updates.wazend.net';
 
-        await this.transporter.sendMail({
+        await this.sendEmailHttp({
             from: `"${process.env.APP_NAME || 'SaaS Template'}" <${from}>`,
             to: email,
             subject: 'Verifica tu correo electrónico',
@@ -53,7 +67,7 @@ export class MailService {
         const resetUrl = `${appUrl}/reset-password?token=${token}`;
         const from = process.env.EMAIL_FROM || 'hello@updates.wazend.net';
 
-        await this.transporter.sendMail({
+        await this.sendEmailHttp({
             from: `"${process.env.APP_NAME || 'SaaS Template'}" <${from}>`,
             to: email,
             subject: 'Recupera tu contraseña',
@@ -84,7 +98,7 @@ export class MailService {
         const workspacesUrl = `${appUrl}/workspaces`;
         const from = process.env.EMAIL_FROM || 'hello@updates.wazend.net';
 
-        await this.transporter.sendMail({
+        await this.sendEmailHttp({
             from: `"${process.env.APP_NAME || 'SaaS Template'}" <${from}>`,
             to: email,
             subject: `Has sido invitado a unirte a "${workspaceName}"`,
