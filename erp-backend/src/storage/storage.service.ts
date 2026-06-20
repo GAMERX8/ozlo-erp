@@ -65,24 +65,30 @@ export class StorageService implements OnModuleInit {
       this.logger.log(`Created storage bucket ${this.bucketName}`);
     }
 
-    await this.s3Client.send(
-      new PutBucketCorsCommand({
-        Bucket: this.bucketName,
-        CORSConfiguration: {
-          CORSRules: [
-            {
-              AllowedHeaders: ['*'],
-              AllowedMethods: ['GET', 'PUT', 'HEAD'],
-              AllowedOrigins: (this.configService.get<string>('ALLOWED_ORIGINS') || 'http://localhost:3000')
-                .split(',')
-                .map((origin) => origin.trim())
-                .filter(Boolean),
-              ExposeHeaders: ['ETag'],
-            },
-          ],
-        },
-      }),
-    );
+    try {
+      await this.s3Client.send(
+        new PutBucketCorsCommand({
+          Bucket: this.bucketName,
+          CORSConfiguration: {
+            CORSRules: [
+              {
+                AllowedHeaders: ['*'],
+                AllowedMethods: ['GET', 'PUT', 'HEAD'],
+                AllowedOrigins: (this.configService.get<string>('ALLOWED_ORIGINS') || 'http://localhost:3000')
+                  .split(',')
+                  .map((origin) => origin.trim())
+                  .filter(Boolean),
+                ExposeHeaders: ['ETag'],
+              },
+            ],
+          },
+        }),
+      );
+    } catch (corsError) {
+      this.logger.warn(
+        `Failed to set S3 CORS configuration: ${corsError.message || corsError}. This can happen if the bucket has B2 Native CORS rules.`,
+      );
+    }
 
     this.logger.log(`S3 storage is ready for signed uploads on bucket ${this.bucketName}`);
   }

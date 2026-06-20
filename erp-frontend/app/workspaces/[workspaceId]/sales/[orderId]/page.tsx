@@ -252,6 +252,360 @@ export default function OrderDetailPage({
       .slice(0, 2);
   };
 
+  const handlePrint = () => {
+    if (!order) return;
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("El navegador bloqueó la ventana emergente de impresión. Por favor, permite ventanas emergentes.");
+      return;
+    }
+
+    const itemsSubtotal = order.items?.reduce((sum, item) => sum + (item.subtotal || 0), 0) || 0;
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Comprobante ${order.order_number || order.id.slice(0, 8)}</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 40px;
+            font-size: 14px;
+            line-height: 1.5;
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #eaeaea;
+            padding-bottom: 20px;
+          }
+          .logo-area h1 {
+            margin: 0 0 5px 0;
+            color: #111;
+            font-size: 28px;
+          }
+          .logo-area p {
+            margin: 0;
+            color: #666;
+          }
+          .invoice-details {
+            text-align: right;
+          }
+          .invoice-details h2 {
+            margin: 0 0 10px 0;
+            color: #0f172a;
+            font-size: 20px;
+          }
+          .invoice-details p {
+            margin: 2px 0;
+            color: #475569;
+          }
+          .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+          }
+          .card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+          }
+          .card h3 {
+            margin: 0 0 15px 0;
+            color: #0f172a;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+          }
+          .card p {
+            margin: 6px 0;
+            color: #334155;
+          }
+          .card p strong {
+            color: #0f172a;
+          }
+          table.items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+          }
+          table.items-table th {
+            background-color: #f1f5f9;
+            color: #475569;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px;
+            font-size: 12px;
+            text-transform: uppercase;
+            border-bottom: 2px solid #e2e8f0;
+          }
+          table.items-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
+          }
+          .text-right {
+            text-align: right;
+          }
+          .totals-table {
+            width: 320px;
+            margin-left: auto;
+            margin-bottom: 0;
+            border-collapse: collapse;
+          }
+          .totals-table td {
+            padding: 8px 12px;
+            border-bottom: none;
+            color: #334155;
+          }
+          .totals-table tr.grand-total td {
+            font-weight: bold;
+            font-size: 16px;
+            color: #0f172a;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 2px double #e2e8f0;
+            padding-top: 12px;
+          }
+          .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 9999px;
+            text-transform: uppercase;
+          }
+          .badge-primary { background-color: #e0f2fe; color: #0369a1; }
+          .badge-success { background-color: #dcfce7; color: #15803d; }
+          .badge-warning { background-color: #fef9c3; color: #a16207; }
+          .badge-danger { background-color: #fee2e2; color: #b91c1c; }
+          .footer {
+            margin-top: 60px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 12px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+          }
+          @media print {
+            body {
+              padding: 0;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo-area">
+            <h1>${workspace?.name || "ERP"}</h1>
+            <p>Comprobante de Venta</p>
+          </div>
+          <div class="invoice-details">
+            <h2>Orden ${order.order_number || order.id.slice(0, 8)}</h2>
+            <p><strong>Fecha:</strong> ${formatDate(order.date_created)}</p>
+            <p><strong>Estado:</strong> <span class="badge ${
+              order.status === "CANCELLED"
+                ? "badge-danger"
+                : order.status === "DELIVERED"
+                ? "badge-success"
+                : "badge-primary"
+            }">${orderStatusLabels[order.status] || order.status}</span></p>
+          </div>
+        </div>
+
+        <div class="grid-container">
+          <div class="card">
+            <h3>Datos del Cliente</h3>
+            <p><strong>Nombre:</strong> ${order.client?.name || "N/A"}</p>
+            ${
+              order.client?.document_number
+                ? `<p><strong>${order.client.document_type || "Doc"}:</strong> ${
+                    order.client.document_number
+                  }</p>`
+                : ""
+            }
+            ${order.client?.phone ? `<p><strong>Teléfono:</strong> ${order.client.phone}</p>` : ""}
+            ${order.client?.email ? `<p><strong>Correo:</strong> ${order.client.email}</p>` : ""}
+            ${
+              order.shipping_address
+                ? `<p><strong>Dirección de Envío:</strong> ${order.shipping_address}</p>`
+                : ""
+            }
+            ${
+              order.shipping_reference
+                ? `<p><strong>Referencia:</strong> ${order.shipping_reference}</p>`
+                : ""
+            }
+          </div>
+          
+          <div class="card">
+            <h3>Detalles del Envío y Pago</h3>
+            <p><strong>Canal de Venta:</strong> ${
+              salesChannelLabels[order.sales_channel] || order.sales_channel
+            }</p>
+            <p><strong>Método de Entrega:</strong> ${
+              deliveryTypeLabels[order.delivery_type] || order.delivery_type
+            }</p>
+            <p><strong>Región:</strong> ${order.region === "LIMA" ? "Lima" : "Provincia"}</p>
+            <p><strong>Método de Pago:</strong> ${
+              paymentMethodLabels[order.payment_method] || order.payment_method
+            }</p>
+            <p><strong>Estado de Pago:</strong> <span class="badge ${
+              order.payment_status === "PAID"
+                ? "badge-success"
+                : order.payment_status === "PARTIAL"
+                ? "badge-warning"
+                : "badge-danger"
+            }">${paymentStatusLabels[order.payment_status] || order.payment_status}</span></p>
+            ${
+              order.courier
+                ? `<p><strong>Courier / Transportista:</strong> ${order.courier.name}</p>`
+                : ""
+            }
+            ${
+              order.tracking_number
+                ? `<p><strong>Nº Seguimiento:</strong> ${order.tracking_number}</p>`
+                : ""
+            }
+          </div>
+        </div>
+
+        <h3 style="margin-bottom: 15px; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Productos / Servicios</h3>
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Descripción</th>
+              <th class="text-right">Cantidad</th>
+              <th class="text-right">Precio Unitario</th>
+              <th class="text-right">Descuento</th>
+              <th class="text-right">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${order.items
+              ?.map(
+                (item) => `
+              <tr>
+                <td>
+                  <strong>${item.product?.name || "Producto"}</strong>
+                  ${
+                    item.variant
+                      ? `<br><small style="color: #64748b">Variante: ${item.variant.name}</small>`
+                      : ""
+                  }
+                  ${
+                    item.notes
+                      ? `<br><small style="color: #64748b">Nota: ${item.notes}</small>`
+                      : ""
+                  }
+                </td>
+                <td class="text-right">${item.quantity}</td>
+                <td class="text-right">${formatCurrency(item.unit_price)}</td>
+                <td class="text-right">${
+                  item.discount > 0 ? formatCurrency(item.discount) : "-"
+                }</td>
+                <td class="text-right"><strong>${formatCurrency(item.subtotal)}</strong></td>
+              </tr>
+            `,
+              )
+              .join("")}
+          </tbody>
+        </table>
+
+        <table class="totals-table">
+          <tr>
+            <td>Subtotal:</td>
+            <td class="text-right">${formatCurrency(itemsSubtotal)}</td>
+          </tr>
+          ${
+            order.shipping_cost > 0
+              ? `
+          <tr>
+            <td>Costo de Envío:</td>
+            <td class="text-right">${formatCurrency(order.shipping_cost)}</td>
+          </tr>`
+              : ""
+          }
+          ${
+            order.discount_amount > 0
+              ? `
+          <tr>
+            <td>Descuento:</td>
+            <td class="text-right" style="color: #16a34a">-${formatCurrency(
+              order.discount_amount,
+            )}</td>
+          </tr>`
+              : ""
+          }
+          <tr class="grand-total">
+            <td>Total:</td>
+            <td class="text-right">${formatCurrency(order.total_amount || 0)}</td>
+          </tr>
+          ${
+            order.advance_amount > 0
+              ? `
+          <tr>
+            <td>Adelanto Recibido:</td>
+            <td class="text-right" style="color: #16a34a">-${formatCurrency(
+              order.advance_amount,
+            )}</td>
+          </tr>
+          <tr style="font-weight: bold; font-size: 14px; border-top: 1px dashed #e2e8f0;">
+            <td>Saldo Pendiente:</td>
+            <td class="text-right" style="color: ${
+              (order.total_amount || 0) - (order.advance_amount || 0) > 0 ? "#ea580c" : "#16a34a"
+            }">
+              ${formatCurrency((order.total_amount || 0) - (order.advance_amount || 0))}
+            </td>
+          </tr>`
+              : ""
+          }
+        </table>
+
+        ${
+          order.notes
+            ? `
+          <div style="margin-top: 40px;">
+            <h3 style="margin-bottom: 10px; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Notas de Venta</h3>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; font-style: italic; color: #475569;">
+              "${order.notes}"
+            </div>
+          </div>
+        `
+            : ""
+        }
+
+        <div class="footer">
+          <p>Gracias por su compra</p>
+          <p>Generado por ${workspace?.name || "ERP"} - ${new Date().toLocaleDateString()}</p>
+        </div>
+
+        <script>
+          window.onload = function() {
+            window.print();
+            setTimeout(function() {
+              window.close();
+            }, 500);
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
   if (workspaceLoading || orderLoading) {
     return (
       <div className="flex flex-col gap-6 animate-in fade-in duration-500">
@@ -317,7 +671,7 @@ export default function OrderDetailPage({
               Editar Venta
             </Link>
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" />
             Imprimir
           </Button>
