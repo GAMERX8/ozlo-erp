@@ -119,8 +119,10 @@ export class ProductsService {
       const dataToInsert = validProducts.map(p => ({
         workspace_id: workspaceId,
         name: p.name.trim(),
-        price: 0,
-        cost: 0,
+        sku: p.sku && p.sku.trim() !== '' ? p.sku.trim() : null,
+        description: p.description ? String(p.description).trim() : null,
+        price: p.price && !isNaN(Number(p.price)) ? Number(p.price) : 0,
+        cost: p.cost && !isNaN(Number(p.cost)) ? Number(p.cost) : 0,
         min_stock: 0,
         status: 'active',
         unit: 'UND',

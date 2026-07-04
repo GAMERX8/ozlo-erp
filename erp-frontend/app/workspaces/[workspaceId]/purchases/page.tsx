@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/utils";
 import { Plus, Search, MoreHorizontal, Eye, Edit, Trash2, Loader2, ShoppingCart, FileText, CheckCircle, XCircle, ChevronLeft, ChevronRight, Truck } from "lucide-react";
-import { getPurchaseOrders, deletePurchaseOrder, getPurchaseStats } from "@/lib/purchases-actions";
+import { getPurchaseOrders, deletePurchaseOrder, getPurchaseStats, updatePurchaseOrder, receivePurchaseItems } from "@/lib/purchases-actions";
 import { purchaseStatusLabels, purchaseStatusBadgeVariants, type PurchaseStatus, type PurchaseOrder, type PurchaseFilters } from "@/types/purchase";
 import { getSuppliers } from "@/lib/suppliers-actions";
 
@@ -44,6 +44,10 @@ export default function PurchasesPage({ params }: { params: Promise<{ workspaceI
   const [itemsPerPage] = useState(20);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingPurchase, setDeletingPurchase] = useState<PurchaseOrder | null>(null);
+  
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [updatingPurchase, setUpdatingPurchase] = useState<PurchaseOrder | null>(null);
+  const [newStatus, setNewStatus] = useState<PurchaseStatus | "">("");
 
   const workspaceId = workspace?.id;
 
@@ -105,6 +109,44 @@ export default function PurchasesPage({ params }: { params: Promise<{ workspaceI
   const openDeleteModal = (purchase: any) => {
     setDeletingPurchase(purchase);
     setIsDeleteModalOpen(true);
+  };
+
+  const statusMutation = useMutation({
+    mutationFn: async () => {
+      if (!workspaceId || !updatingPurchase || !newStatus) throw new Error("Datos incompletos");
+      
+      if (newStatus.toUpperCase() === "RECEIVED") {
+        // Enviar ítems para recepción completa
+        const itemsToReceive = updatingPurchase.items?.map(i => ({
+          item_id: i.id,
+          quantity_received: i.quantity_ordered,
+        })) || [];
+        
+        const result = await receivePurchaseItems(updatingPurchase.id, workspaceId, { items: itemsToReceive as any });
+        if (!result.success) throw new Error(result.error);
+        return result.data;
+      } else {
+        const result = await updatePurchaseOrder(updatingPurchase.id, workspaceId, { status: newStatus.toUpperCase() });
+        if (!result.success) throw new Error(result.error);
+        return result.data;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Estado de la orden actualizado");
+      setIsStatusModalOpen(false);
+      setUpdatingPurchase(null);
+      queryClient.invalidateQueries({ queryKey: ["purchases", workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["purchase-stats", workspaceId] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const openStatusModal = (purchase: PurchaseOrder) => {
+    setUpdatingPurchase(purchase);
+    setNewStatus(purchase.status.toLowerCase() as PurchaseStatus);
+    setIsStatusModalOpen(true);
   };
 
   const formatCurrency = (amount: number) => {
@@ -252,6 +294,9 @@ export default function PurchasesPage({ params }: { params: Promise<{ workspaceI
                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild><Link href={`/workspaces/${slug}/purchases/${purchase.id}`}><Eye className="mr-2 h-4 w-4" /> Ver detalle</Link></DropdownMenuItem>
+                      {purchase.status?.toLowerCase() !== "received" && purchase.status?.toLowerCase() !== "cancelled" && (
+                        <DropdownMenuItem onClick={() => openStatusModal(purchase)}><Edit className="mr-2 h-4 w-4" /> Actualizar estado</DropdownMenuItem>
+                      )}
                       {(purchase.status?.toLowerCase() === "draft") && (<DropdownMenuItem onClick={() => openDeleteModal(purchase)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Eliminar</DropdownMenuItem>)}
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -274,6 +319,38 @@ export default function PurchasesPage({ params }: { params: Promise<{ workspaceI
 
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
         <DialogContent><DialogHeader><DialogTitle>Eliminar Orden</DialogTitle><DialogDescription>¿Estás seguro de eliminar la orden {deletingPurchase?.order_number}? Esta acción no se puede deshacer.</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>Cancelar</Button><Button variant="destructive" onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}>{deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}Eliminar</Button></DialogFooter></DialogContent>
+      </Dialog>
+
+      <Dialog open={isStatusModalOpen} onOpenChange={setIsStatusModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Actualizar Estado</DialogTitle>
+            <DialogDescription>Cambia el estado de la orden {updatingPurchase?.order_number}.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label className="mb-2 block">Nuevo Estado</Label>
+            <Select value={newStatus} onValueChange={(val) => setNewStatus(val as PurchaseStatus)}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="Selecciona un estado" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">Borrador</SelectItem>
+                <SelectItem value="ordered">Pendiente</SelectItem>
+                <SelectItem value="received">Recibido (Aumenta stock)</SelectItem>
+              </SelectContent>
+            </Select>
+            {newStatus === 'received' && (
+              <p className="text-sm text-amber-600 mt-2 bg-amber-50 p-2 rounded-md">
+                Al marcar como Recibido, se agregará automáticamente el inventario solicitado al almacén y la orden no podrá volver a un estado anterior.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsStatusModalOpen(false)}>Cancelar</Button>
+            <Button onClick={() => statusMutation.mutate()} disabled={statusMutation.isPending || !newStatus || newStatus === updatingPurchase?.status.toLowerCase()}>
+              {statusMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Guardar Cambios
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </div>
   );

@@ -76,12 +76,41 @@ export default function ProductsPage({ params }: { params: Promise<{ workspaceId
       const rows = XLSX.utils.sheet_to_json(firstSheet) as any[];
 
       const productsToImport = rows.map((row: any) => {
-        // Busca una columna "Nombre", "Name" o toma la primera columna disponible
-        const nameKey = Object.keys(row).find(k => k.toLowerCase().includes('nombre') || k.toLowerCase().includes('name')) || Object.keys(row)[0];
-        return {
-          name: row[nameKey] ? String(row[nameKey]) : '',
+        const keys = Object.keys(row);
+        
+        const findValue = (keywords: string[]) => {
+          const key = keys.find(k => keywords.some(kw => k.toLowerCase().includes(kw)));
+          return key ? row[key] : null;
         };
-      }).filter(p => p.name.trim() !== '');
+
+        const nameValue = findValue(['nombre', 'name', 'producto', 'articulo']) || row[keys[0]];
+        const nameStr = nameValue ? String(nameValue).trim() : '';
+
+        const skuValue = findValue(['sku', 'codigo', 'código', 'referencia']);
+        const descValue = findValue(['descrip', 'detalle']);
+        const priceValue = findValue(['precio', 'venta', 'price']);
+        const costValue = findValue(['costo', 'cost']);
+
+        // Generate SKU if missing
+        let skuStr = skuValue ? String(skuValue).trim() : '';
+        if (!skuStr && nameStr) {
+          const cleanName = nameStr.replace(/[^a-zA-Z0-9\s]/g, '').trim().toUpperCase();
+          const words = cleanName.split(/\s+/);
+          const baseSku = words.length > 1 
+            ? `${words[0].substring(0, 4)}-${words.slice(1).map(w => w.substring(0, 3)).join('').substring(0, 6)}`
+            : cleanName.substring(0, 8);
+          const randomSuffix = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+          skuStr = `${baseSku}-${randomSuffix}`;
+        }
+
+        return {
+          name: nameStr,
+          sku: skuStr,
+          description: descValue ? String(descValue).trim() : '',
+          price: priceValue ? Number(priceValue) : 0,
+          cost: costValue ? Number(costValue) : 0,
+        };
+      }).filter(p => p.name !== '');
 
       if (productsToImport.length === 0) {
         toast.error('No se encontraron productos válidos en el archivo');

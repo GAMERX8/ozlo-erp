@@ -299,8 +299,24 @@ export function ProductForm({ workspaceId, onSuccess, initialData }: ProductForm
                 <FormControl>
                   <Input 
                     className="h-12" 
-                    placeholder="Ej. Laptop Gaming" 
+                    placeholder="Ej. Monitor Samsung 24..." 
                     {...field} 
+                    onChange={(e) => {
+                      field.onChange(e);
+                      const currentSku = form.getValues('sku');
+                      if (!initialData && (!currentSku || currentSku.trim() === '')) {
+                        const nameStr = e.target.value;
+                        const cleanName = nameStr.replace(/[^a-zA-Z0-9\s]/g, '').trim().toUpperCase();
+                        if (cleanName) {
+                          const words = cleanName.split(/\s+/);
+                          const baseSku = words.length > 1 
+                            ? `${words[0].substring(0, 4)}-${words.slice(1).map(w => w.substring(0, 3)).join('').substring(0, 6)}`
+                            : cleanName.substring(0, 8);
+                          const randomSuffix = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+                          form.setValue('sku', `${baseSku}-${randomSuffix}`);
+                        }
+                      }
+                    }}
                     value={field.value ?? ''} 
                   />
                 </FormControl>

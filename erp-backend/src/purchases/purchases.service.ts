@@ -83,11 +83,28 @@ export class PurchasesService {
     const taxAmount = subtotal * 0.18; // IGV 18%
     const totalAmount = subtotal + taxAmount;
 
-    // Generar número de orden correlativo
-    const count = await this.prisma.purchase.count({
-      where: { workspace_id: workspaceId }
+    // Generar número de orden correlativo de forma segura
+    const lastPurchase = await this.prisma.purchase.findFirst({
+      where: { workspace_id: workspaceId, order_number: { startsWith: 'OC-' } },
+      orderBy: { order_number: 'desc' },
+      select: { order_number: true }
     });
-    const order_number = `OC-${(count + 1).toString().padStart(4, '0')}`;
+
+    let nextNumber = 1;
+    if (lastPurchase && lastPurchase.order_number) {
+      const match = lastPurchase.order_number.match(/OC-(\d+)/);
+      if (match) {
+        nextNumber = parseInt(match[1], 10) + 1;
+      }
+    } else {
+      // Fallback si no hay compras
+      const count = await this.prisma.purchase.count({
+        where: { workspace_id: workspaceId }
+      });
+      if (count > 0) nextNumber = count + 1;
+    }
+
+    const order_number = `OC-${nextNumber.toString().padStart(4, '0')}`;
 
     const purchase = await this.prisma.$transaction(async (tx) => {
       // Crear la orden de compra como BORRADOR (DRAFT)
