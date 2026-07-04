@@ -68,6 +68,3 @@ npm run dev
 ```
 
 El servidor del backend usualmente correrá en el puerto `3000` y el frontend en el `3001` o `3000` dependiendo de la configuración. 
-
----
-_Desarrollado con ❤️ usando Antigravity._
