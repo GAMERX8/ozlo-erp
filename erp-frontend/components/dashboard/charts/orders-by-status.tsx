@@ -19,14 +19,15 @@ interface OrdersByStatusChartProps {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "#eab308", // yellow-500
-  contacted: "#3b82f6", // blue-500
-  confirmed: "#22c55e", // green-500
-  preparing: "#a855f7", // purple-500
-  shipped: "#6366f1", // indigo-500
-  delivered: "#10b981", // emerald-500
-  cancelled: "#ef4444", // red-500
-  returned: "#f97316", // orange-500
+  NO_CONFIRMED: "#eab308", // yellow-500
+  CONTACTED: "#60a5fa",    // blue-400
+  CONFIRMED: "#2563eb",    // blue-600
+  PREPARING: "#a855f7",    // purple-500
+  READY: "#6366f1",        // indigo-500
+  SHIPPED: "#1d4ed8",      // blue-700
+  DELIVERED: "#10b981",    // emerald-500
+  CANCELLED: "#ef4444",    // red-500
+  RETURNED: "#f97316",     // orange-500
 };
 
 interface CustomTooltipProps {

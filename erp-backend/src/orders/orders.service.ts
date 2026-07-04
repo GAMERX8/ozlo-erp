@@ -46,12 +46,23 @@ export class OrdersService {
       item.product_sku = product.sku || '';
     }
 
+    // Obtener almacén por defecto si no se envió
+    let finalWarehouseId = dto.warehouse_id;
+    if (!finalWarehouseId) {
+      const defaultWarehouse = await this.prisma.warehouse.findFirst({
+        where: { workspace_id: workspaceId, is_active: true }
+      });
+      if (defaultWarehouse) {
+        finalWarehouseId = defaultWarehouse.id;
+      }
+    }
+
     // Crear orden con items
     const order = await this.prisma.order.create({
       data: {
         workspace_id: workspaceId,
         client_id: dto.client_id,
-        warehouse_id: dto.warehouse_id || null,
+        warehouse_id: finalWarehouseId,
         channel: dto.channel || 'OTHER',
         channel_detail: dto.channel_detail || null,
         order_type: dto.order_type || 'DIRECT',
@@ -374,6 +385,17 @@ export class OrdersService {
         }
       }
     }
+    
+    // Obtener almacén por defecto si la orden no tiene
+    let finalWarehouseId = existing.warehouse_id;
+    if (!finalWarehouseId) {
+      const defaultWarehouse = await this.prisma.warehouse.findFirst({
+        where: { workspace_id: workspaceId, is_active: true }
+      });
+      if (defaultWarehouse) {
+        finalWarehouseId = defaultWarehouse.id;
+      }
+    }
 
     const order = await this.prisma.order.update({
       where: { id },
@@ -382,6 +404,7 @@ export class OrdersService {
         courier_id: courierId,
         tracking_number: trackingNumber,
         tracking_url: trackingUrl,
+        warehouse_id: finalWarehouseId,
         cancellation_reason: dto.cancellation_reason,
         notes: dto.notes ? `${existing.notes || ''}\n${dto.notes}`.trim() : existing.notes,
         ...statusDates,
@@ -463,6 +486,17 @@ export class OrdersService {
           trackingUrl = `${trackingUrlBase}${dto.tracking_number}`;
         }
       }
+      
+      // Obtener almacén por defecto si la orden no tiene
+      let finalWarehouseId = existing.warehouse_id;
+      if (!finalWarehouseId) {
+        const defaultWarehouse = await this.prisma.warehouse.findFirst({
+          where: { workspace_id: workspaceId, is_active: true }
+        });
+        if (defaultWarehouse) {
+          finalWarehouseId = defaultWarehouse.id;
+        }
+      }
 
       const order = await this.prisma.order.update({
         where: { id, workspace_id: workspaceId },
@@ -471,6 +505,7 @@ export class OrdersService {
           courier_id: dto.courier_id,
           tracking_number: dto.tracking_number,
           tracking_url: trackingUrl,
+          warehouse_id: finalWarehouseId,
           ...statusDates,
         },
       });
@@ -627,12 +662,14 @@ export class OrdersService {
     const stockDeductingStatuses = ['READY', 'SHIPPED', 'DELIVERED'];
     const isDeductStatus = stockDeductingStatuses.includes(newStatus);
     
-    // Check if order already has stock movements
-    const hasMovements = order.stockMovements && order.stockMovements.length > 0;
+    // Calcular el balance de movimientos para esta orden
+    // Si la suma de las cantidades es menor a 0, significa que el stock está deducido
+    const stockBalance = order.stockMovements?.reduce((acc: number, mov: any) => acc + mov.quantity, 0) || 0;
+    const isStockDeducted = stockBalance < 0;
 
-    if (isDeductStatus && !hasMovements) {
+    if (isDeductStatus && !isStockDeducted) {
       await this.deductOrderStock(order, workspaceId);
-    } else if (!isDeductStatus && hasMovements) {
+    } else if (!isDeductStatus && isStockDeducted) {
       // If moving back to a non-out status (e.g. PREPARING, CANCELLED, RETURNED)
       await this.restoreOrderStock(order, workspaceId);
     }
@@ -684,6 +721,7 @@ export class OrdersService {
   }
 
   private async restoreOrderStock(order: any, workspaceId: string) {
+    // Buscar los movimientos OUT que no hayan sido compensados
     const movements = await this.prisma.stockMovement.findMany({
       where: { 
         order_id: order.id,
@@ -693,26 +731,62 @@ export class OrdersService {
 
     if (movements.length === 0) return;
 
+    // Calculate how much we need to restore for each product/variant
+    // Because there could be multiple OUT/IN cycles
+    const stockBalance = order.stockMovements?.reduce((acc: any, mov: any) => {
+      const key = `${mov.product_id}_${mov.variant_id || 'null'}_${mov.warehouse_id}`;
+      acc[key] = (acc[key] || 0) + mov.quantity;
+      return acc;
+    }, {}) || {};
+
     for (const movement of movements) {
-      // Find proper inventory item using variant_id from movement
-      const inventory = await this.prisma.inventory.findFirst({
-        where: {
-          product_id: movement.product_id,
-          warehouse_id: movement.warehouse_id,
-          variant_id: movement.variant_id || null
-        }
-      });
-
-      if (inventory) {
-        await this.prisma.inventory.update({
-          where: { id: inventory.id },
-          data: { stock: { increment: Math.abs(movement.quantity) } }
+      const key = `${movement.product_id}_${movement.variant_id || 'null'}_${movement.warehouse_id}`;
+      const balance = stockBalance[key] || 0;
+      
+      // Si el balance es menor que 0, significa que hay stock pendiente por restaurar
+      if (balance < 0) {
+        const quantityToRestore = Math.abs(balance);
+        
+        let inventory = await this.prisma.inventory.findFirst({
+          where: {
+            product_id: movement.product_id,
+            warehouse_id: movement.warehouse_id,
+            variant_id: movement.variant_id || null
+          }
         });
-      }
 
-      await this.prisma.stockMovement.delete({
-        where: { id: movement.id }
-      });
+        if (inventory) {
+          await this.prisma.inventory.update({
+            where: { id: inventory.id },
+            data: { stock: { increment: quantityToRestore } }
+          });
+        } else {
+          inventory = await this.prisma.inventory.create({
+            data: {
+              product_id: movement.product_id,
+              warehouse_id: movement.warehouse_id,
+              variant_id: movement.variant_id || null,
+              stock: quantityToRestore,
+            }
+          });
+        }
+
+        await this.prisma.stockMovement.create({
+          data: {
+            product_id: movement.product_id,
+            warehouse_id: movement.warehouse_id,
+            variant_id: movement.variant_id || null,
+            quantity: quantityToRestore,
+            type: 'IN',
+            reason: `Devolución/Cancelación - Orden ${order.id.slice(0, 8)}`,
+            order_id: order.id,
+            reference_id: order.id,
+          }
+        });
+        
+        // Mark as restored in our memory so we don't restore it twice if there are multiple OUTs
+        stockBalance[key] = 0;
+      }
     }
   }
 }
