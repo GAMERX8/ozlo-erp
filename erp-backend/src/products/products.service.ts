@@ -21,6 +21,7 @@ export class ProductsService {
     const sanitizedData = {
       ...productData,
       category_id: productData.category_id === '' ? null : productData.category_id,
+      sku: productData.sku === '' ? null : productData.sku,
     };
     const sanitizedWarehouseId = warehouse_id === '' ? null : warehouse_id;
 
@@ -249,10 +250,11 @@ export class ProductsService {
   async update(id: string, workspaceId: string, updateProductDto: UpdateProductDto, userId: string) {
     await this.findOne(id, workspaceId);
 
-    // Sanitizar category_id
+    // Sanitizar category_id y sku
     const sanitizedData = {
       ...updateProductDto,
       category_id: updateProductDto.category_id === '' ? null : updateProductDto.category_id,
+      sku: updateProductDto.sku === '' ? null : updateProductDto.sku,
     };
 
     const product = await this.prisma.product.update({
