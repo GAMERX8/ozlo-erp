@@ -333,6 +333,29 @@ export async function createProduct(workspaceId: string, data: Record<string, an
   }
 }
 
+export async function createBulkProducts(workspaceId: string, data: any[]): Promise<Result<any>> {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_URL}/products/bulk?workspaceId=${workspaceId}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return { success: false, error: error.message || "Error al crear productos masivamente" };
+    }
+
+    const result = await response.json();
+    revalidatePath(`/workspaces/${workspaceId}/products`);
+    return { success: true, data: result };
+  } catch (error) {
+    logger.error("Error bulk creating products:", error);
+    return { success: false, error: "Error al crear productos masivamente" };
+  }
+}
+
 export async function updateProduct(workspaceId: string, id: string, data: Record<string, any>): Promise<Result<any>> {
   try {
     const headers = await getAuthHeaders();

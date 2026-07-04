@@ -11,22 +11,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Plus, LayoutGrid, Warehouse } from 'lucide-react';
+import { Plus, LayoutGrid, Warehouse, UploadCloud, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useWorkspace } from '@/hooks/use-workspace';
 import { Product } from '@/types/logistics';
 import { Skeleton } from '@/components/ui/skeleton';
+import * as XLSX from 'xlsx';
+import { toast } from 'sonner';
+import { useRef } from 'react';
 
 export default function ProductsPage({ params }: { params: Promise<{ workspaceId: string }> }) {
   const { workspaceId: urlWorkspaceId } = use(params);
   const { data: workspace } = useWorkspace(urlWorkspaceId);
   const workspaceId = workspace?.id;
   
-  const { fetchProducts } = useLogistics(workspaceId || '');
+  const { fetchProducts, createBulkProducts } = useLogistics(workspaceId || '');
   
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isImporting, setIsImporting] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
@@ -59,6 +64,45 @@ export default function ProductsPage({ params }: { params: Promise<{ workspaceId
     setIsProductModalOpen(true);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !workspaceId) return;
+
+    setIsImporting(true);
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(firstSheet) as any[];
+
+      const productsToImport = rows.map((row: any) => {
+        // Busca una columna "Nombre", "Name" o toma la primera columna disponible
+        const nameKey = Object.keys(row).find(k => k.toLowerCase().includes('nombre') || k.toLowerCase().includes('name')) || Object.keys(row)[0];
+        return {
+          name: row[nameKey] ? String(row[nameKey]) : '',
+        };
+      }).filter(p => p.name.trim() !== '');
+
+      if (productsToImport.length === 0) {
+        toast.error('No se encontraron productos válidos en el archivo');
+        return;
+      }
+
+      // TODO: Here we need createBulkProducts from useLogistics, wait, useLogistics exposes it.
+      // Wait, let's just use it directly or from hook.
+      // I need to import createBulkProducts or extract it from useLogistics.
+      await createBulkProducts(productsToImport);
+      toast.success(`${productsToImport.length} productos importados correctamente`);
+      loadProducts();
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || 'Error al importar el archivo Excel');
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   if (loading && !products.length) {
     return (
       <div className="flex flex-col gap-6">
@@ -79,10 +123,27 @@ export default function ProductsPage({ params }: { params: Promise<{ workspaceId
           <p className="text-sm text-muted-foreground mt-0.5">Gestiona tus productos y categorías.</p>
         </div>
         <div className="flex items-center gap-2">
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            accept=".xlsx, .xls, .csv" 
+            onChange={handleFileUpload} 
+          />
           <Button variant="outline" size="sm" asChild>
             <Link href={`/workspaces/${urlWorkspaceId}/categories`}>
               <LayoutGrid className="mr-2 h-4 w-4" /> Categorías
             </Link>
+          </Button>
+          <Button 
+            variant="default" 
+            className="bg-green-600 hover:bg-green-700 text-white" 
+            size="sm" 
+            onClick={() => fileInputRef.current?.click()} 
+            disabled={isImporting}
+          >
+            {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
+            Importar Excel
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href={`/workspaces/${urlWorkspaceId}/warehouses`}>

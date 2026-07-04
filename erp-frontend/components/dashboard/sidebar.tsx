@@ -123,6 +123,7 @@ export function Sidebar({
                     href: `/workspaces/${currentWorkspaceId}/inventory`,
                     icon: Search,
                 },
+                /* Ocultos temporalmente por petición
                 {
                     title: "Categorías",
                     href: `/workspaces/${currentWorkspaceId}/categories`,
@@ -133,6 +134,7 @@ export function Sidebar({
                     href: `/workspaces/${currentWorkspaceId}/warehouses`,
                     icon: Warehouse,
                 },
+                */
                 {
                     title: "Proveedores",
                     href: `/workspaces/${currentWorkspaceId}/suppliers`,

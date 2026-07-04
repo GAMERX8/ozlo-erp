@@ -101,6 +101,54 @@ export class ProductsService {
     }
   }
 
+  async createBulk(workspaceId: string, productsData: any[], userId: string) {
+    console.log('--- DB Create Bulk Products Attempt ---');
+    console.log('WorkspaceID:', workspaceId);
+    console.log('Products Count:', productsData.length);
+
+    try {
+      // Filtrar aquellos que tienen nombre (obligatorio en Prisma)
+      const validProducts = productsData.filter(p => p.name && p.name.trim() !== '');
+      
+      if (validProducts.length === 0) {
+        throw new BadRequestException('No se encontraron productos válidos para importar');
+      }
+
+      // Preparar los datos
+      const dataToInsert = validProducts.map(p => ({
+        workspace_id: workspaceId,
+        name: p.name.trim(),
+        price: 0,
+        cost: 0,
+        min_stock: 0,
+        status: 'active',
+        unit: 'UND',
+      }));
+
+      // Insertar masivamente
+      const result = await this.prisma.product.createMany({
+        data: dataToInsert,
+        skipDuplicates: true, // Por si acaso hubiera conflictos de unique
+      });
+
+      console.log('Bulk Products Successfully Created:', result.count);
+
+      await this.audit.log({
+        action: 'PRODUCT_BULK_CREATE',
+        entityType: 'product',
+        actorId: userId,
+        workspaceId: workspaceId,
+        metadata: { imported_count: result.count },
+      });
+
+      return { success: true, count: result.count };
+    } catch (error) {
+      console.error('CRITICAL ERROR during Bulk Product creation:');
+      console.error(error);
+      throw error;
+    }
+  }
+
   async findAll(workspaceId: string, categoryId?: string, search?: string) {
     console.log('--- PRODUCTS SERVICE: FIND ALL ---');
     console.log('WorkspaceID:', workspaceId);

@@ -24,7 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useLogistics } from '@/hooks/useLogistics';
 import { Category, Warehouse } from '@/types/logistics';
-import { createPresignedUpload, completeUpload } from '@/lib/storage-actions';
+import { createPresignedUpload, completeUpload, uploadFileDirectly } from '@/lib/storage-actions';
 import { ImageIcon, X, UploadCloud, Loader2 } from 'lucide-react';
 
 interface ProductFormProps {
@@ -91,45 +91,18 @@ export function ProductForm({ workspaceId, onSuccess, initialData }: ProductForm
   const uploadFile = async (file: File): Promise<string | null> => {
     setUploadingImage(true);
     try {
-      // 1. Obtener URL firmada
-      const presignResult = await createPresignedUpload({
-        workspace_id: workspaceId,
-        filename: file.name,
-        content_type: file.type,
-        size_bytes: file.size,
-        scope: 'product_image',
-      });
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('workspace_id', workspaceId);
+      formData.append('scope', 'product_image');
 
-      if (!presignResult.success || !presignResult.data) {
-        throw new Error(presignResult.error || 'Error al preparar la subida');
+      const result = await uploadFileDirectly(formData);
+      
+      if (!result.success || !result.data) {
+        throw new Error(result.error || 'Error al subir la imagen');
       }
 
-      const { upload_url, file_id, public_url } = presignResult.data;
-
-      // 2. Subir directamente a S3
-      const uploadResponse = await fetch(upload_url, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error('Error al subir el archivo al servidor de almacenamiento');
-      }
-
-      // 3. Confirmar subida
-      const completeResult = await completeUpload({
-        file_id,
-        workspace_id: workspaceId,
-      });
-
-      if (!completeResult.success) {
-        throw new Error(completeResult.error || 'Error al confirmar la subida');
-      }
-
-      return completeResult.data?.signed_url || public_url;
+      return result.data.signed_url || result.data.public_url;
     } catch (error: any) {
       console.error('Upload error:', error);
       toast.error(`Error al subir imagen: ${error.message}`);

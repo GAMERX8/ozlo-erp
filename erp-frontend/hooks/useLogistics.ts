@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getCategories, getWarehouses, getProducts, getKardex, createProduct, updateProduct } from '@/lib/clients-actions';
+import { getCategories, getWarehouses, getProducts, getKardex, createProduct, updateProduct, createBulkProducts } from '@/lib/clients-actions';
 import type { Product, Category, Warehouse, StockMovement } from '../types/logistics';
 
 export function useLogistics(workspaceId?: string) {
@@ -87,6 +87,15 @@ export function useLogistics(workspaceId?: string) {
     return result.data;
   };
 
+  const handleCreateBulkProducts = async (data: any[]) => {
+    if (!workspaceId) throw new Error('Workspace ID is required');
+    const result = await createBulkProducts(workspaceId, data);
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to bulk create products');
+    }
+    return result.data;
+  };
+
   const handleUpdateProduct = async (id: string, data: any) => {
     if (!workspaceId) throw new Error('Workspace ID is required');
     const result = await updateProduct(workspaceId, id, data);
@@ -104,6 +113,7 @@ export function useLogistics(workspaceId?: string) {
     fetchProducts,
     fetchKardex,
     createProduct: handleCreateProduct,
+    createBulkProducts: handleCreateBulkProducts,
     updateProduct: handleUpdateProduct,
   };
 }

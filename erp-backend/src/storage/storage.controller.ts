@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Request, UseGuards, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CompleteUploadDto } from './dto/complete-upload.dto';
 import { CreateUploadDto } from './dto/create-upload.dto';
@@ -22,5 +23,17 @@ export class StorageController {
   @Get('files/:id/url')
   getSignedFileUrl(@Request() req, @Param('id') fileId: string) {
     return this.storageService.getSignedFileUrl(req.user.userId, fileId);
+  }
+
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFileDirectly(
+    @Request() req,
+    @UploadedFile() file: any,
+    @Body('workspace_id') workspace_id: string,
+    @Body('scope') scope: string,
+  ) {
+    if (!file) throw new BadRequestException('No file uploaded');
+    return this.storageService.uploadFileDirectly(req.user.userId, workspace_id, file, scope);
   }
 }

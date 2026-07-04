@@ -178,6 +178,50 @@ export class StorageService implements OnModuleInit {
     };
   }
 
+  async uploadFileDirectly(userId: string, workspaceId: string, file: any, scope: string = 'general') {
+    this.assertConfigured();
+    await this.assertWorkspaceAccess(userId, workspaceId);
+
+    const filename = this.sanitizeFilename(file.originalname);
+    const objectKey = this.buildObjectKey(workspaceId, scope, filename);
+
+    const storedFile = await this.prisma.storedFile.create({
+      data: {
+        workspace_id: workspaceId,
+        uploaded_by: userId,
+        bucket: this.bucketName,
+        object_key: objectKey,
+        filename,
+        mime_type: file.mimetype,
+        size_bytes: file.size,
+        scope,
+        visibility: 'private',
+        status: 'pending',
+      },
+    });
+
+    await this.s3Client.send(
+      new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: objectKey,
+        ContentType: file.mimetype,
+        Body: file.buffer,
+      })
+    );
+
+    const updatedFile = await this.prisma.storedFile.update({
+      where: { id: storedFile.id },
+      data: { status: 'ready' },
+    });
+
+    return {
+      success: true,
+      file: this.serializeStoredFile(updatedFile),
+      public_url: await this.getPublicUrl(objectKey),
+      signed_url: await this.getSignedReadUrl(updatedFile),
+    };
+  }
+
   async getPublicUrl(objectKey: string): Promise<string> {
     const endpoint = this.configService.get<string>('S3_ENDPOINT');
     return `${endpoint}/${this.bucketName}/${objectKey}`;

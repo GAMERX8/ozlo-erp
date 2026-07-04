@@ -38,6 +38,17 @@ export class ProductsController {
     return this.productsService.create(workspaceId, createProductDto, req.user.id);
   }
 
+  @ApiOperation({ summary: 'Crear múltiples productos' })
+  @ApiQuery({ name: 'workspaceId', required: false })
+  @Post('bulk')
+  createBulk(
+    @Query('workspaceId') workspaceId: string,
+    @Body() productsData: any[],
+    @Request() req,
+  ) {
+    return this.productsService.createBulk(workspaceId, productsData, req.user.id);
+  }
+
   @ApiOperation({ summary: 'Listar todos los productos del workspace' })
   @ApiQuery({ name: 'workspaceId', required: false })
   @ApiQuery({ name: 'categoryId', required: false })

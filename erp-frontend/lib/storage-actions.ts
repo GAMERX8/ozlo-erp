@@ -74,3 +74,31 @@ export async function getFileUrl(fileId: string): Promise<Result<{ url: string }
     return { success: false, error: "Error al obtener URL del archivo" };
   }
 }
+
+export async function uploadFileDirectly(formData: FormData): Promise<Result<{ success: boolean; file: any; public_url: string; signed_url: string }>> {
+  try {
+    const headers = await getAuthHeaders();
+    // FormData usually shouldn't have Content-Type set manually when using fetch
+    // fetch will automatically set it to multipart/form-data with the correct boundary
+    // But we need to remove 'Content-Type': 'application/json' from getAuthHeaders if it exists
+    const cleanHeaders = { ...headers };
+    delete cleanHeaders['Content-Type'];
+
+    const response = await fetch(`${API_URL}/storage/upload`, {
+      method: "POST",
+      headers: cleanHeaders,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return { success: false, error: error.message || "Error al subir el archivo" };
+    }
+
+    const result = await response.json();
+    return { success: true, data: result };
+  } catch (error) {
+    logger.error("Error uploading file directly:", error);
+    return { success: false, error: "Error de conexión al subir el archivo" };
+  }
+}
