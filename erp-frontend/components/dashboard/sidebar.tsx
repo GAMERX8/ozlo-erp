@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -17,7 +18,9 @@ import {
     TrendingUp,
     Code2,
     LayoutGrid,
-    Warehouse
+    Warehouse,
+    ChevronDown,
+    ChevronRight
 } from "lucide-react";
 import { WorkspaceSwitcher } from "./workspace-switcher";
 import { Logo } from "@/components/logo";
@@ -69,6 +72,7 @@ export function Sidebar({
 }: SidebarProps) {
     const pathname = usePathname();
     const { state, isMobile } = useSidebar();
+    const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
     type NavSection = {
         label: string;
@@ -204,6 +208,30 @@ export function Sidebar({
         },
     ];
 
+    // Synchronize open sections with current pathname
+    useEffect(() => {
+        setOpenSections((prev) => {
+            const updated = { ...prev };
+            navSections.forEach((section) => {
+                const hasActiveItem = section.items.some((item) => pathname === item.href);
+                if (hasActiveItem) {
+                    updated[section.label] = true;
+                } else if (prev[section.label] === undefined) {
+                    // Default General to open, others to closed initially
+                    updated[section.label] = section.label === "General";
+                }
+            });
+            return updated;
+        });
+    }, [pathname]);
+
+    const toggleSection = (label: string) => {
+        setOpenSections((prev) => ({
+            ...prev,
+            [label]: !prev[label],
+        }));
+    };
+
     return (
         <ShadcnSidebar collapsible="icon">
             <SidebarHeader className="border-b h-16 shrink-0 group-data-[collapsible=icon]:p-0">
@@ -226,27 +254,45 @@ export function Sidebar({
                     />
                 </div>
 
-                {navSections.map((section) => (
-                    <SidebarGroup key={section.label}>
-                        <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground">
-                            {section.label}
-                        </SidebarGroupLabel>
-                        <SidebarGroupContent>
-                            <SidebarMenu>
-                                {section.items.map((item) => (
-                                    <SidebarMenuItem key={item.href}>
-                                        <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
-                                            <Link href={item.href} onClick={onItemClick}>
-                                                <item.icon className="size-4 shrink-0" />
-                                                <span className="text-sm font-medium">{item.title}</span>
-                                            </Link>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                ))}
-                            </SidebarMenu>
-                        </SidebarGroupContent>
-                    </SidebarGroup>
-                ))}
+                {navSections.map((section) => {
+                    // Always show all icons in collapsed icon mode, otherwise use the openSections accordion state
+                    const isOpen = state === "collapsed" ? true : !!openSections[section.label];
+                    
+                    return (
+                        <SidebarGroup key={section.label} className="py-1">
+                            <SidebarGroupLabel 
+                                onClick={() => state !== "collapsed" && toggleSection(section.label)} 
+                                className={`flex items-center justify-between text-xs font-semibold text-muted-foreground select-none py-1.5 px-3 w-full group/label transition-colors ${state !== "collapsed" ? "hover:text-foreground cursor-pointer" : ""}`}
+                            >
+                                <span>{section.label}</span>
+                                <span className="group-data-[collapsible=icon]:hidden">
+                                    {isOpen ? (
+                                        <ChevronDown className="w-3.5 h-3.5 opacity-60 group-hover/label:opacity-100 transition-opacity" />
+                                    ) : (
+                                        <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover/label:opacity-100 transition-opacity" />
+                                    )}
+                                </span>
+                            </SidebarGroupLabel>
+                            
+                            {isOpen && (
+                                <SidebarGroupContent className="animate-in fade-in duration-200">
+                                    <SidebarMenu>
+                                        {section.items.map((item) => (
+                                            <SidebarMenuItem key={item.href}>
+                                                <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
+                                                    <Link href={item.href} onClick={onItemClick}>
+                                                        <item.icon className="size-4 shrink-0" />
+                                                        <span className="text-sm font-medium">{item.title}</span>
+                                                    </Link>
+                                                </SidebarMenuButton>
+                                            </SidebarMenuItem>
+                                        ))}
+                                    </SidebarMenu>
+                                </SidebarGroupContent>
+                            )}
+                        </SidebarGroup>
+                    );
+                })}
 
                 <div className="mt-auto">
                     <SidebarGroup className="pt-0 pb-2">

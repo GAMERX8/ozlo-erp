@@ -2,12 +2,14 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { CreateOrderDto, UpdateOrderDto, UpdateOrderStatusDto, BulkUpdateStatusDto } from './dto/order.dto';
+import { IntegrationsService } from '../integrations/integrations.service';
 
 @Injectable()
 export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private audit: AuditService,
+    private integrationsService: IntegrationsService,
   ) {}
 
   async create(workspaceId: string, dto: CreateOrderDto, userId: string) {
@@ -106,6 +108,9 @@ export class OrdersService {
       workspaceId: workspaceId,
       afterState: order,
     });
+
+    // Enviar notificación de integración en segundo plano
+    this.integrationsService.notifyOrderEvent(workspaceId, 'ORDER_CREATED', order).catch(() => {});
 
     return order;
   }
@@ -436,6 +441,9 @@ export class OrdersService {
       afterState: order,
     });
 
+    // Enviar notificación de integración en segundo plano
+    this.integrationsService.notifyOrderEvent(workspaceId, 'ORDER_STATUS_UPDATED', order).catch(() => {});
+
     return order;
   }
 
@@ -508,6 +516,9 @@ export class OrdersService {
           warehouse_id: finalWarehouseId,
           ...statusDates,
         },
+        include: {
+          client: true,
+        },
       });
 
       // Gestionar stock según el cambio de estado
@@ -521,7 +532,12 @@ export class OrdersService {
       return order;
     });
 
-    await Promise.all(updatePromises);
+    const updatedOrders = await Promise.all(updatePromises);
+
+    // Enviar notificaciones de integración en segundo plano
+    updatedOrders.forEach((order) => {
+      this.integrationsService.notifyOrderEvent(workspaceId, 'ORDER_STATUS_UPDATED', order).catch(() => {});
+    });
 
     await this.audit.log({
       action: 'ORDERS_BULK_STATUS_UPDATED',

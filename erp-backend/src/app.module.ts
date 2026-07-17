@@ -25,6 +25,7 @@ import { CashClosuresModule } from './cash-closures/cash-closures.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { OperationsModule } from './operations/operations.module';
 import { ApiKeysModule } from './api-keys/api-keys.module';
+import { IntegrationsModule } from './integrations/integrations.module';
 
 
 @Module({
@@ -57,6 +58,7 @@ import { ApiKeysModule } from './api-keys/api-keys.module';
         DashboardModule,
         OperationsModule,
         ApiKeysModule,
+        IntegrationsModule,
         
     ],
 })

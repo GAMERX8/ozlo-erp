@@ -110,6 +110,7 @@ model Workspace {
   supportTickets         SupportTicket[]
   cashClosures           CashClosure[]
   apiKeys                ApiKey[]
+  integrations           WorkspaceIntegration[]
   
 
   @@map("workspaces")
@@ -886,3 +887,18 @@ model StockMovement {
 
   @@map("stock_movements")
 }
+
+model WorkspaceIntegration {
+  id           String    @id @default(uuid())
+  workspace_id String
+  workspace    Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  type         String    // e.g., "wpp"
+  config       Json      // Store configuration, e.g. { url: "...", token: "..." }
+  is_active    Boolean   @default(true)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  @@unique([workspace_id, type])
+  @@map("workspace_integrations")
+}
+

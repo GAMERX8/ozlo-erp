@@ -14,7 +14,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { PhoneInput } from "@/components/ui/phone-input";
 import { 
   Select, 
   SelectContent, 
@@ -28,13 +27,28 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 const clientSchema = z.object({
-  name: z.string().min(2, "Mínimo 2 caracteres"),
+  name: z.string()
+    .min(2, "Mínimo 2 caracteres")
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/, "El nombre solo puede contener letras y espacios"),
   document_type: z.enum(["DNI", "RUC", "CE", "PASSPORT"]),
   document_number: z.string().optional().default(""),
-  phone: z.string().optional(),
+  phone: z.string().optional().refine((val) => {
+    if (!val) return true;
+    return /^\d{9}$/.test(val);
+  }, {
+    message: "El teléfono debe tener exactamente 9 dígitos",
+  }),
   address: z.string().optional(),
   district_id: z.string().optional(),
   reference: z.string().optional(),
+}).refine((data) => {
+  if (data.document_type === "DNI" && data.document_number) {
+    return /^\d{1,8}$/.test(data.document_number);
+  }
+  return true;
+}, {
+  message: "El DNI debe tener solo números y hasta 8 dígitos",
+  path: ["document_number"],
 });
 
 type ClientFormValues = z.infer<typeof clientSchema>;
@@ -66,7 +80,7 @@ export function ClientForm({ workspaceId, initialData, onSuccess }: ClientFormPr
           name: initialData.name || "",
           document_type: initialData.document_type || "DNI",
           document_number: initialData.document_number || "",
-          phone: initialData.phone || "",
+          phone: initialData.phone ? initialData.phone.replace("+51", "").replace(/\D/g, "").slice(-9) : "",
           address: initialData.address || "",
           district_id: initialData.district_id || "",
           reference: initialData.reference || "",
@@ -86,6 +100,7 @@ export function ClientForm({ workspaceId, initialData, onSuccess }: ClientFormPr
     try {
       const payload = {
         ...values,
+        phone: values.phone ? `+51${values.phone}` : "",
         district_id: selectedDistrict || values.district_id,
       };
 
@@ -121,7 +136,14 @@ export function ClientForm({ workspaceId, initialData, onSuccess }: ClientFormPr
             <FormItem>
               <FormLabel>Razón Social / Nombre</FormLabel>
               <FormControl>
-                <Input placeholder="Nombre del cliente" {...field} />
+                <Input 
+                  placeholder="Nombre del cliente" 
+                  {...field} 
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "");
+                    field.onChange(val);
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -160,7 +182,17 @@ export function ClientForm({ workspaceId, initialData, onSuccess }: ClientFormPr
               <FormItem className="col-span-2">
                 <FormLabel>Número de Documento</FormLabel>
                 <FormControl>
-                  <Input placeholder="12345678" {...field} />
+                  <Input 
+                    placeholder={form.watch("document_type") === "DNI" ? "12345678" : "Número de documento"} 
+                    {...field} 
+                    onChange={(e) => {
+                      let val = e.target.value;
+                      if (form.watch("document_type") === "DNI") {
+                        val = val.replace(/\D/g, "").slice(0, 8);
+                      }
+                      field.onChange(val);
+                    }}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -175,12 +207,21 @@ export function ClientForm({ workspaceId, initialData, onSuccess }: ClientFormPr
             <FormItem>
               <FormLabel>Teléfono</FormLabel>
               <FormControl>
-                <PhoneInput
-                  placeholder="+51 999 999 999"
-                  value={field.value}
-                  onChange={field.onChange}
-                  defaultCountry="PE"
-                />
+                <div className="flex rounded-md shadow-sm">
+                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-xs font-mono select-none">
+                    🇵🇪 +51
+                  </span>
+                  <Input
+                    type="text"
+                    placeholder="999999999"
+                    className="rounded-l-none focus-visible:ring-emerald-500 font-mono text-sm"
+                    {...field}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "").slice(0, 9);
+                      field.onChange(val);
+                    }}
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

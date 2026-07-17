@@ -6,9 +6,17 @@ import { AuditModule } from '../audit/audit.module';
 import { InventoryModule } from '../inventory/inventory.module';
 import { ApiKeysModule } from '../api-keys/api-keys.module';
 import { AuthModule } from '../auth/auth.module';
+import { IntegrationsModule } from '../integrations/integrations.module';
 
 @Module({
-  imports: [PrismaModule, AuditModule, InventoryModule, ApiKeysModule, forwardRef(() => AuthModule)],
+  imports: [
+    PrismaModule,
+    AuditModule,
+    InventoryModule,
+    ApiKeysModule,
+    forwardRef(() => AuthModule),
+    IntegrationsModule,
+  ],
   controllers: [OrdersController],
   providers: [OrdersService],
   exports: [OrdersService],
