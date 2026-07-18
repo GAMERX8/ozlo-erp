@@ -43,11 +43,27 @@ const clientSchema = z.object({
   reference: z.string().optional(),
 }).refine((data) => {
   if (data.document_type === "DNI" && data.document_number) {
-    return /^\d{1,8}$/.test(data.document_number);
+    return /^\d{8}$/.test(data.document_number);
   }
   return true;
 }, {
-  message: "El DNI debe tener solo números y hasta 8 dígitos",
+  message: "El DNI debe tener exactamente 8 dígitos",
+  path: ["document_number"],
+}).refine((data) => {
+  if (data.document_type === "RUC" && data.document_number) {
+    return /^\d{11}$/.test(data.document_number);
+  }
+  return true;
+}, {
+  message: "El RUC debe tener exactamente 11 dígitos",
+  path: ["document_number"],
+}).refine((data) => {
+  if (data.document_type === "PASSPORT" && data.document_number) {
+    return /^[a-zA-Z]\d{8}$/.test(data.document_number);
+  }
+  return true;
+}, {
+  message: "El pasaporte debe tener 1 letra seguida de 8 números",
   path: ["document_number"],
 });
 
@@ -183,12 +199,33 @@ export function ClientForm({ workspaceId, initialData, onSuccess }: ClientFormPr
                 <FormLabel>Número de Documento</FormLabel>
                 <FormControl>
                   <Input 
-                    placeholder={form.watch("document_type") === "DNI" ? "12345678" : "Número de documento"} 
+                    placeholder={
+                      form.watch("document_type") === "DNI" ? "Ej. 71234567" :
+                      form.watch("document_type") === "RUC" ? "Ej. 20123456789" :
+                      form.watch("document_type") === "PASSPORT" ? "Ej. A12345678" :
+                      "Número de documento"
+                    }
+                    maxLength={
+                      form.watch("document_type") === "DNI" ? 8 :
+                      form.watch("document_type") === "RUC" ? 11 :
+                      form.watch("document_type") === "PASSPORT" ? 9 :
+                      20
+                    }
+                    className="font-mono"
                     {...field} 
                     onChange={(e) => {
                       let val = e.target.value;
-                      if (form.watch("document_type") === "DNI") {
+                      const docType = form.watch("document_type");
+                      if (docType === "DNI") {
                         val = val.replace(/\D/g, "").slice(0, 8);
+                      } else if (docType === "RUC") {
+                        val = val.replace(/\D/g, "").slice(0, 11);
+                      } else if (docType === "PASSPORT") {
+                        if (val.length > 0) {
+                          const firstChar = val.charAt(0).replace(/[^a-zA-Z]/g, "");
+                          const rest = val.slice(1).replace(/\D/g, "").slice(0, 8);
+                          val = firstChar + rest;
+                        }
                       }
                       field.onChange(val);
                     }}
