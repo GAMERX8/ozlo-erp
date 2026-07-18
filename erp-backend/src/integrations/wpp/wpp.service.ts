@@ -42,10 +42,11 @@ const STATUS_MAP: Record<string, string> = {
 const DEFAULT_TEMPLATES: Record<string, string> = {
   'ORDER_CREATED': 
     `¡Hola *{clientName}*! 👋\n\n` +
-    `Tu pedido *#{orderNumber}* ha sido registrado correctamente.\n` +
-    `*Total:* S/. {totalAmount}\n` +
+    `Hemos recibido tu pedido *#{orderNumber}* con éxito. 🎉\n\n` +
+    `*Resumen de tu compra:*\n{productDetails}\n\n` +
+    `*Total a pagar:* S/. {totalAmount}\n` +
     `*Método de pago:* {paymentMethod}\n\n` +
-    `¡Gracias por tu compra! Te notificaremos cuando cambie el estado de envío.`,
+    `¡Gracias por tu compra! Te notificaremos cuando haya actualizaciones en tu envío.`,
   
   'CONFIRMED': 
     `¡Hola *{clientName}*! 👋\n\n` +
@@ -59,26 +60,27 @@ const DEFAULT_TEMPLATES: Record<string, string> = {
     
   'READY': 
     `¡Hola *{clientName}*! 👋\n\n` +
-    `El estado de tu pedido *#{orderNumber}* ha cambiado a: *Listo para Despacho / Entrega*.\n\n` +
+    `Tu pedido *#{orderNumber}* ya se encuentra: *Listo para Despacho / Entrega*.\n\n` +
     `¡Gracias por confiar en nosotros!`,
     
   'SHIPPED': 
-    `¡Hola *{clientName}*! 👋\n\n` +
-    `El estado de tu pedido *#{orderNumber}* ha cambiado a: *Enviado*.\n` +
-    `*Courier / Transportista:* {courierName}\n` +
-    `*Código de seguimiento:* {trackingNumber}\n` +
+    `¡Hola *{clientName}*! 🚚💨\n\n` +
+    `¡Buenas noticias! Tu pedido *#{orderNumber}* ya está en camino.\n\n` +
+    `*Productos enviados:*\n{productNames}\n\n` +
+    `*Courier:* {courierName}\n` +
+    `*Tracking:* {trackingNumber}\n` +
     `*Sigue tu envío aquí:* {trackingUrl}\n\n` +
-    `¡Gracias por confiar en nosotros!`,
+    `¡Esperamos que lo disfrutes mucho!`,
     
   'DELIVERED': 
-    `¡Hola *{clientName}*! 👋\n\n` +
-    `El estado de tu pedido *#{orderNumber}* ha cambiado a: *Entregado*.\n\n` +
-    `¡Gracias por confiar en nosotros!`,
+    `¡Hola *{clientName}*! 🎉\n\n` +
+    `Tu pedido *#{orderNumber}* ha sido *Entregado* con éxito.\n\n` +
+    `¡Gracias por confiar en nosotros, esperamos verte pronto!`,
     
   'CANCELLED': 
     `¡Hola *{clientName}*! 👋\n\n` +
-    `El estado de tu pedido *#{orderNumber}* ha cambiado a: *Cancelado*.\n\n` +
-    `¡Gracias por confiar en nosotros!`,
+    `Te informamos que tu pedido *#{orderNumber}* ha sido *Cancelado*.\n\n` +
+    `Si tienes alguna duda, por favor contáctanos.`,
 };
 
 @Injectable()
@@ -328,6 +330,8 @@ export class WppService {
       trackingNumber: order.tracking_number || '',
       trackingUrl: order.tracking_url || '',
       status: STATUS_MAP[order.status] || order.status,
+      productNames: order.items ? order.items.map((i: any) => i.product_name).join(', ') : '',
+      productDetails: order.items ? order.items.map((i: any) => `${i.quantity}x ${i.product_name}`).join('\n') : '',
     };
 
     let text = template;

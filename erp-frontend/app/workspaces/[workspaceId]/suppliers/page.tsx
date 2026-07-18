@@ -122,6 +122,59 @@ export default function SuppliersPage({ params }: { params: Promise<{ workspaceI
     setIsDeleteModalOpen(true); 
   };
 
+  const handleSave = () => {
+    // Validaciones de campos obligatorios
+    if (!formData.name || !formData.document_type || !formData.document_number || !formData.contact_name || !formData.phone) {
+      toast.error("Por favor completa todos los campos obligatorios (*)");
+      return;
+    }
+
+    // Validaciones de formato
+    if (formData.contact_name) {
+      if (!/^[a-zA-Z\sñÑáéíóúÁÉÍÓÚ]+$/.test(formData.contact_name)) {
+        toast.error("El nombre de contacto solo debe contener letras");
+        return;
+      }
+    }
+
+    if (formData.phone) {
+      if (!/^\d{9}$/.test(formData.phone)) {
+        toast.error("El teléfono debe tener exactamente 9 dígitos");
+        return;
+      }
+    }
+
+    if (formData.document_type === 'DNI' && formData.document_number) {
+      if (!/^\d{8}$/.test(formData.document_number)) {
+        toast.error("El DNI debe tener exactamente 8 dígitos");
+        return;
+      }
+    }
+
+    if (formData.document_type === 'RUC' && formData.document_number) {
+      if (!/^\d{11}$/.test(formData.document_number)) {
+        toast.error("El RUC debe tener exactamente 11 dígitos");
+        return;
+      }
+    }
+
+    if (formData.document_type === 'PASAPORTE' && formData.document_number) {
+      if (!/^[a-zA-Z]\d{8}$/.test(formData.document_number)) {
+        toast.error("El pasaporte debe tener 1 letra y 8 números");
+        return;
+      }
+    }
+
+    if (formData.email) {
+      if (!formData.email.includes('@') || !formData.email.toLowerCase().includes('.com')) {
+        toast.error("El email debe ser válido (contener @ y .com)");
+        return;
+      }
+    }
+
+    saveMutation.mutate();
+  };
+
   if (workspaceLoading) {
     return (
       <div className="flex flex-col animate-in fade-in duration-500 gap-6">
@@ -318,7 +371,10 @@ export default function SuppliersPage({ params }: { params: Promise<{ workspaceI
               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Razón Social *</Label>
               <Input 
                 value={formData.name} 
-                onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                onChange={(e) => {
+                  let val = e.target.value.replace(/[^a-zA-Z\sñÑáéíóúÁÉÍÓÚ]/g, '');
+                  setFormData({...formData, name: val})
+                }} 
                 placeholder="Nombre de la empresa" 
                 className="h-11 rounded-xl focus-visible:ring-primary/20 transition-all font-bold"
               />
@@ -342,8 +398,23 @@ export default function SuppliersPage({ params }: { params: Promise<{ workspaceI
               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">N° Documento *</Label>
               <Input 
                 value={formData.document_number} 
-                onChange={(e) => setFormData({...formData, document_number: e.target.value})} 
-                placeholder="Ej. 20123456789" 
+                onChange={(e) => {
+                  let val = e.target.value;
+                  if (formData.document_type === 'DNI') {
+                    val = val.replace(/\D/g, '').slice(0, 8);
+                  } else if (formData.document_type === 'RUC') {
+                    val = val.replace(/\D/g, '').slice(0, 11);
+                  } else if (formData.document_type === 'PASAPORTE') {
+                    if (val.length > 0) {
+                      let firstChar = val.charAt(0).replace(/[^a-zA-Z]/g, '');
+                      let rest = val.slice(1).replace(/\D/g, '').slice(0, 8);
+                      val = firstChar + rest;
+                    }
+                  }
+                  setFormData({...formData, document_number: val})
+                }} 
+                maxLength={formData.document_type === 'DNI' ? 8 : formData.document_type === 'RUC' ? 11 : 9}
+                placeholder={formData.document_type === 'DNI' ? "Ej. 71234567" : formData.document_type === 'RUC' ? "Ej. 20123456789" : "Ej. A12345678"} 
                 className="h-11 rounded-xl focus-visible:ring-primary/20 font-mono"
               />
             </div>
@@ -352,16 +423,33 @@ export default function SuppliersPage({ params }: { params: Promise<{ workspaceI
 
             <div className="flex flex-col gap-2">
               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <User className="h-3 w-3" /> Contacto
+                <User className="h-3 w-3" /> Contacto *
               </Label>
-              <Input value={formData.contact_name} onChange={(e) => setFormData({...formData, contact_name: e.target.value})} placeholder="Nombre completo" className="rounded-xl h-10" />
+              <Input 
+                value={formData.contact_name} 
+                onChange={(e) => {
+                  let val = e.target.value.replace(/[^a-zA-Z\sñÑáéíóúÁÉÍÓÚ]/g, '');
+                  setFormData({...formData, contact_name: val})
+                }} 
+                placeholder="Nombre completo" 
+                className="rounded-xl h-10" 
+              />
             </div>
             
             <div className="flex flex-col gap-2">
               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <Phone className="h-3 w-3" /> Teléfono
+                <Phone className="h-3 w-3" /> Teléfono *
               </Label>
-              <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="+51 999..." className="rounded-xl h-10" />
+              <Input 
+                value={formData.phone} 
+                onChange={(e) => {
+                  let val = e.target.value.replace(/\D/g, '').slice(0, 9);
+                  setFormData({...formData, phone: val})
+                }}
+                maxLength={9} 
+                placeholder="999..." 
+                className="rounded-xl h-10" 
+              />
             </div>
 
             <div className="col-span-2 flex flex-col gap-2">
@@ -382,8 +470,8 @@ export default function SuppliersPage({ params }: { params: Promise<{ workspaceI
           <DialogFooter className="p-6 bg-muted/30 border-t items-center mt-0">
             <Button variant="ghost" onClick={() => setIsModalOpen(false)} className="rounded-xl">Cancelar</Button>
             <Button 
-              onClick={() => saveMutation.mutate()} 
-              disabled={!formData.name || !formData.document_number || saveMutation.isPending}
+              onClick={handleSave} 
+              disabled={saveMutation.isPending}
               className="rounded-xl font-bold px-8 shadow-lg shadow-primary/10 transition-all hover:scale-[1.02]"
             >
               {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}

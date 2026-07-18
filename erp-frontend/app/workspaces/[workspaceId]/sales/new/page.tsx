@@ -161,6 +161,7 @@ export default function NewSalePage({
     id: string;
     name: string;
     price: number;
+    inventory?: any[];
   }
 
   // Query para obtener clientes
@@ -225,11 +226,42 @@ export default function NewSalePage({
     const product = products.find((p: Product) => p.id === productId);
     if (product) {
       form.setValue(`items.${index}.unit_price`, product.price);
+
+      if (!product.price || product.price === 0) {
+        toast.warning("Este producto no tiene precio. Debes ingresar el precio unitario obligatoriamente.", { duration: 5000 });
+      }
+
+      const totalStock = product.inventory?.reduce((sum: number, inv: any) => sum + (inv.quantity || 0), 0) || 0;
+      if (totalStock <= 0) {
+        toast.warning("Este producto no cuenta con stock. Ponte en contacto con tu proveedor para ingresar más.", { duration: 6000 });
+      }
     }
   };
 
   const onSubmit = async (values: OrderFormValues) => {
     if (!workspaceId) return;
+
+    // Validaciones de stock y precio antes de enviar
+    for (const item of values.items) {
+      const product = products.find((p: Product) => p.id === item.product_id);
+      if (product) {
+        if (!item.unit_price || item.unit_price <= 0) {
+          toast.error(`El producto "${product.name}" debe tener un precio unitario mayor a 0.`);
+          return;
+        }
+
+        const totalStock = product.inventory?.reduce((sum: number, inv: any) => sum + (inv.quantity || 0), 0) || 0;
+        if (totalStock <= 0) {
+          toast.error(`No puedes registrar la venta. El producto "${product.name}" no cuenta con stock.`);
+          return;
+        }
+
+        if (item.quantity > totalStock) {
+          toast.error(`No hay suficiente stock de "${product.name}". Tienes ${totalStock} y quieres vender ${item.quantity}.`);
+          return;
+        }
+      }
+    }
 
     setIsSubmitting(true);
     

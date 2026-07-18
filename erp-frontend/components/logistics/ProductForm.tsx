@@ -145,6 +145,11 @@ export function ProductForm({ workspaceId, onSuccess, initialData }: ProductForm
   const [continueAdding, setContinueAdding] = useState(false);
 
   const onSubmit = async (values: any) => {
+    if (Number(values.cost) >= Number(values.price)) {
+      toast.warning('El costo debe ser menor al precio de venta');
+      return;
+    }
+
     setLoading(true);
     try {
       let finalGallery = values.gallery;
